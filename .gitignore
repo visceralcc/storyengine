@@ -1,0 +1,68 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Expo / React Native
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Native build outputs
+ios/Pods/
+ios/build/
+ios/.xcode.env.local
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+
+# Metro
+.metro-health-check*
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage / test output
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS / temp
+Thumbs.db
+ehthumbs.db
+Desktop.ini
