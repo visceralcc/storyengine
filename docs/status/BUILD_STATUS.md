@@ -1,14 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 12, 2026
+**Last updated:** May 14, 2026
 
 ---
 
-## Current Phase: Speccing (Ideas-to-Code Process)
+## Current Phase: Implementing (Phase B — Discovery)
 
-We are in the specification phase — no code has been written yet. This document tracks progress through the Ideas-to-Code process steps, and will later track implementation progress once we reach Step 6 (Handoff to Claude Code).
-
-**⚠️ PRD v0.3 Rewrite Impact:** The PRD was rewritten from v0.2 to v0.3, replacing the three-Builder model with a four-phase creative pipeline. This changes the Structure Map significantly. Previously completed Phase A foundation specs (`Spec_DataModel.md`, `Spec_DataPersistence.md`, `Spec_Navigation.md`) will need revision to reflect the new pipeline model (Discovery Notes entity, Phase State entity, unified workspace navigation, phase transitions). The Templates document remains valid.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1 and Discovery Engine Phase 1 are complete with passing unit tests. This document tracks the Ideas-to-Code process steps and current implementation progress.
 
 ---
 
@@ -17,34 +15,34 @@ We are in the specification phase — no code has been written yet. This documen
 | Step | Document | Status | Notes |
 |------|----------|--------|-------|
 | 1 | PRD | ✅ Complete | `Spec_Story_Engine_PRD.md` — v0.3, four-phase pipeline model |
-| 2 | Templates | ✅ Complete | `Templates_SpecDocs.md` — Tech Spec, Design Spec, Buildable Unit templates (still valid) |
-| 3 | Structure Map | 🔴 Needs rewrite | `Structure_Map.md` — must be rewritten to reflect new pipeline model |
-| 4 | Level 2 Specs | 🔴 Revision needed | 3 previously complete specs need updates for new model |
-| 5 | Level 3 Buildable Units | ⬜ Not started | Anticipatory count will change with new Structure Map |
+| 2 | Templates | ✅ Complete | `Templates_SpecDocs.md` — Tech Spec, Design Spec, Buildable Unit templates |
+| 3 | Structure Map | ✅ Complete | `Structure_Map.md` — v0.2, rewritten for pipeline model. 8 feature folders, 13 Level 2 specs. |
+| 4 | Level 2 Specs | 🟡 In progress | 4 of 13 complete |
+| 5 | Level 3 Buildable Units | ⬜ Not started | ~22 anticipated, depends on Level 2 |
 | 6 | Claude Code Handoff | ⬜ Not started | Implementation begins here |
 | 7 | Spec Updates | ⬜ Not started | Ongoing as implementation reveals gaps |
 
 ---
 
-## Level 2 Spec Status
+## Level 2 Spec Writing Order
 
-### Previously completed specs (need revision for v0.3)
+From `Structure_Map.md` §6. Write in this order, build after each phase.
 
-| Spec | Original Status | v0.3 Impact |
-|------|----------------|-------------|
-| `foundation/Spec_DataModel.md` | ✅ Complete (v0.1) | 🔴 Needs revision — add Discovery Note entity, Phase State entity, rename Builder references to Dimension, add Conflict dimension defaults |
-| `foundation/Spec_DataPersistence.md` | ✅ Complete (v0.1) | 🟡 Minor revision — Discovery Notes persistence, Phase State persistence |
-| `foundation/Spec_Navigation.md` | ✅ Complete (v0.1) | 🔴 Needs revision — Builder switching replaced by phase transitions and dimension tracking within unified workspace |
-
-### New spec writing order (pending Structure Map rewrite)
-
-The Structure Map must be rewritten before a new writing order can be established. Key changes anticipated:
-
-- **New feature area: `discovery/`** — Discovery canvas, consolidation engine, note management
-- **`builder/` becomes `workspace/`** — Unified workspace replacing three separate Builder screens
-- **`chat-engine/` expands** — Phase-adaptive chat behavior (brainstorming in Discovery, extraction in Development, editor in Refinement)
-- **Phase management** — New system for tracking and transitioning between pipeline phases
-- **`start-screen/` simplifies** — Two options instead of four
+| Phase | Order | Spec | Status |
+|-------|-------|------|--------|
+| A — Foundation | 1 | `Spec_DataModel.md` | ✅ Complete (v0.2) |
+| A — Foundation | 2 | `Spec_DataPersistence.md` | ✅ Complete (v0.2) |
+| A — Foundation | 3 | `Spec_Navigation.md` | ✅ Complete (v0.2) |
+| B — Discovery | 4 | `Spec_DiscoveryEngine.md` | ✅ Complete (v0.1) |
+| B — Discovery | 5 | `Spec_Discovery_Design.md` | ⬜ Next up |
+| C — Core Engine | 6 | `Spec_ChatEngine.md` | ⬜ |
+| D — Surfaces | 7 | `Spec_StartScreen_Design.md` | ⬜ |
+| D — Surfaces | 8 | `Spec_Workspace_Design.md` | ⬜ |
+| E — Enrichment | 9 | `Spec_InsightsEngine.md` | ⬜ |
+| E — Enrichment | 10 | `Spec_InsightsPanel_Design.md` | ⬜ |
+| E — Enrichment | 11 | `Spec_ImageGeneration.md` | ⬜ |
+| F — Output | 12 | `Spec_Export.md` | ⬜ |
+| F — Output | 13 | `Spec_MCPServer.md` | ⬜ |
 
 ---
 
@@ -54,7 +52,7 @@ The Structure Map must be rewritten before a new writing order can be establishe
 |----------|--------|---------|
 | Unified project model | One project contains all creative material across all phases | PRD v0.2, reaffirmed v0.3 |
 | Image generation | DALL-E (OpenAI API) + user-uploaded found content | PRD v0.2 |
-| Concept Types extensible | Default sets per dimension, AI and user can create new types | PRD v0.2, updated v0.3 (Builder → Dimension) |
+| Concept Types extensible | Default sets per dimension, AI and user can create new types | PRD v0.2, updated v0.3 |
 | Local-first architecture | Local server for v1; cloud migration later | PRD v0.2 |
 | Local MCP Server | Runs alongside app on user's machine for v1 | PRD v0.2 |
 | Concept versioning | In-place edits for refinements; explicit v1/v2/v3 for major rethinks | PRD v0.2 |
@@ -64,16 +62,30 @@ The Structure Map must be rewritten before a new writing order can be establishe
 | Spec file naming | `Spec_[Name].md` (Tech), `Spec_[Name]_Design.md` (Design), `Screen_*.md`, `Component_*.md`, `Logic_*.md` | Templates v0.1 |
 | Claude Code Handoff Prompt | Every spec includes a ready-to-paste session opener | Templates v0.1 |
 | Feature folder naming | lowercase-kebab-case | Structure Map v0.1 |
-| Prefixed nanoid IDs | All entities use prefix_nanoid format (proj_, con_, ctype_, ver_, img_, msg_, ins_) | DataModel v0.1 |
+| Prefixed nanoid IDs | All entities use prefix_nanoid format (proj_, dnote_, con_, ctype_, ver_, img_, msg_, ins_, phase_) | DataModel v0.1, updated v0.2 |
 | Plain object entities | Interfaces not classes, no methods — clean JSON serialization | DataModel v0.1 |
 | Chat history append-only | Messages never edited or deleted in v1 | DataModel v0.1 |
-| **Four-phase creative pipeline** | **Discovery → Development → Refinement → Production Handoff replaces three-Builder model** | **PRD v0.3** |
-| **Start Screen simplified** | **Two options: "Start New Story" and "Open Existing Project"** | **PRD v0.3** |
-| **Unified workspace** | **Character/World/Conflict are dimensions, not separate screens** | **PRD v0.3** |
-| **Conflict vs. Storyline** | **"Conflict" in Development, shapes into "Storyline" in Refinement** | **PRD v0.3** |
-| **Phase-appropriate cards** | **No cards in Discovery; emerge in Development; primary surface in Refinement** | **PRD v0.3** |
-| **Discovery canvas** | **Freeform ideation + AI consolidation, inspired by Velocity's Ideation pattern** | **PRD v0.3** |
-| **Creative gravity** | **AI discovers user's creative center (character-first, world-first, conflict-first) during Discovery** | **PRD v0.3** |
+| Four-phase creative pipeline | Discovery → Development → Refinement → Production Handoff replaces three-Builder model | PRD v0.3 |
+| Start Screen simplified | Two options: "Start New Story" and "Open Existing Project" | PRD v0.3 |
+| Unified workspace | Character/World/Conflict are dimensions, not separate screens | PRD v0.3 |
+| Conflict vs. Storyline | "Conflict" in Development, shapes into "Storyline" in Refinement | PRD v0.3 |
+| Phase-appropriate cards | No cards in Discovery; emerge in Development; primary surface in Refinement | PRD v0.3 |
+| 41 default ConceptTypes | 11 World + 13 Character + 9 Conflict + 8 Storyline, seeded per project | DataModel v0.2 |
+| Spatial Discovery canvas | Unbounded 2D canvas, notes placed at x/y coordinates, no grid | DiscoveryEngine v0.1 |
+| Dual input paths | Manual note placement + AI stream-of-consciousness extraction | DiscoveryEngine v0.1 |
+| User-initiated consolidation | "Consolidate Ideas" button, minimum 3 notes, AI groups into labeled clusters | DiscoveryEngine v0.1 |
+| Consolidation is on-canvas | Clusters displayed as border-boxed groups on the canvas, not a separate screen | DiscoveryEngine v0.1 |
+| Creative gravity as consolidation byproduct | AI classifies clusters by dimension, gravity = dimension with most notes | DiscoveryEngine v0.1 |
+| Gap analysis (internal-only) | Maps notes against 41 default Concept Types, feeds Development chat strategy | DiscoveryEngine v0.1 |
+| Full re-consolidation | Returning to Discovery + re-consolidating replaces all clusters from full note pool | DiscoveryEngine v0.1 |
+| Discovery chat included | Chat panel on Discovery canvas for brainstorming + stream-of-consciousness extraction | DiscoveryEngine v0.1 |
+| Narrative UI for gap filling | Development AI surfaces gaps through natural conversation, not checklists | DiscoveryEngine v0.1 (§6.3) |
+
+---
+
+## Data Model Additions Pending
+
+The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMapping` interfaces and extends `PhaseState.discovery` with a `gapAnalysis` field. These additions need to be incorporated into `Spec_DataModel.md` in a v0.3 revision.
 
 ---
 
@@ -82,21 +94,42 @@ The Structure Map must be rewritten before a new writing order can be establishe
 | File | Type | Status |
 |------|------|--------|
 | `Spec_Story_Engine_PRD.md` | PRD (Level 1) | ✅ Complete (v0.3) |
-| `BUILD_STATUS.md` | Companion | ✅ Current file |
+| `status/BUILD_STATUS.md` | Companion | ✅ Current file |
 | `HARD_RULES.md` | Companion | ✅ Updated for v0.3 |
-| `OVERVIEW.md` | Companion | 🟡 Needs update for pipeline model |
-| `Templates_SpecDocs.md` | Templates | ✅ Complete (v0.1) — still valid |
-| `Structure_Map.md` | Structure | 🔴 Needs rewrite for pipeline model |
-| `foundation/Spec_DataModel.md` | Tech Spec (Level 2) | 🔴 Needs revision for v0.3 |
-| `foundation/Spec_DataPersistence.md` | Tech Spec (Level 2) | 🟡 Needs minor revision for v0.3 |
-| `foundation/Spec_Navigation.md` | Tech Spec (Level 2) | 🔴 Needs revision for v0.3 |
+| `OVERVIEW.md` | Companion | ✅ Updated for v0.3 |
+| `Templates_SpecDocs.md` | Templates | ✅ Complete (v0.1) |
+| `Structure_Map.md` | Structure | ✅ Complete (v0.2) |
+| `foundation/Spec_DataModel.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) — needs v0.3 for GapAnalysis addition |
+| `foundation/Spec_DataPersistence.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
+| `foundation/Spec_Navigation.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
+| `discovery/Spec_DiscoveryEngine.md` | Tech Spec (Level 2) | ✅ Complete (v0.1) |
+
+---
+
+## Implementation Progress
+
+| Area | Phase | Status | Files |
+|------|-------|--------|-------|
+| Infrastructure | Scaffold | ✅ Complete | `package.json`, `tsconfig.json`, `app.json`, `babel.config.js`, `App.tsx` |
+| DataModel | 1 — Types + factories | ✅ Complete | `src/models/types.ts`, `src/models/defaults.ts`, `src/models/factories.ts` |
+| DataModel | 2 — Relationship helpers | ⬜ | `src/models/relationships.ts` |
+| DataModel | 3 — Default ConceptType seeding | ✅ Complete (rolled into Phase 1) | `src/models/defaults.ts` |
+| DataModel | 4 — Phase state management | ⬜ | TBD |
+| DataPersistence | 1–5 | ⬜ | not started |
+| Discovery Engine | 1 — Canvas core | ✅ Complete | `src/engine/discovery/canvasManager.ts` |
+| Discovery Engine | 2 — Chat integration | ⬜ | not started |
+| Discovery Engine | 3 — Consolidation | ⬜ | not started |
+| Discovery Engine | 4 — Gap analysis | ⬜ | not started |
+| Discovery Engine | 5 — Re-consolidation + review | ⬜ | not started |
+
+Tests: 35 passing (19 model, 16 canvas).
 
 ---
 
 ## What's Next
 
-**Immediate next step:** Rewrite `Structure_Map.md` to reflect the new pipeline model. This is the prerequisite for knowing what specs to write (and revise) next.
+**Immediate next step:** Phase 2 of the Discovery Engine — chat integration (AI extraction + brainstorming). Requires `Spec_ChatEngine.md` to be drafted, since extraction depends on the system prompt and intent-detection logic defined there.
 
-**After that:** Revise the three foundation specs (`Spec_DataModel.md`, `Spec_DataPersistence.md`, `Spec_Navigation.md`) to incorporate Discovery Notes, Phase State, unified workspace navigation, and Builder → Dimension terminology.
+**Parallel option:** Continue building DataModel Phases 2+4 and DataPersistence Phase 1 so the canvas has a real save path before adding AI features.
 
-**Then:** Resume the Level 2 spec writing process with the new feature areas (Discovery Engine, Workspace Design, phase-adaptive Chat Engine).
+**Specs still pending:** `Spec_Discovery_Design.md` (Phase B, Order 5), `Spec_ChatEngine.md` (Phase C, Order 6).
