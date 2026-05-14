@@ -115,21 +115,25 @@ The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMappin
 | DataModel | 2 — Relationship helpers | ⬜ | `src/models/relationships.ts` |
 | DataModel | 3 — Default ConceptType seeding | ✅ Complete (rolled into Phase 1) | `src/models/defaults.ts` |
 | DataModel | 4 — Phase state management | ⬜ | TBD |
-| DataPersistence | 1–5 | ⬜ | not started |
+| DataPersistence | 1 — Atomic writes + recovery | ✅ Complete | `src/persistence/paths.ts`, `src/persistence/atomicWrite.ts` |
+| DataPersistence | 2 — Project lifecycle | ⬜ | `src/persistence/projectStore.ts` |
+| DataPersistence | 3 — Save queue | ⬜ | `src/persistence/saveQueue.ts` |
+| DataPersistence | 4 — Image management | ⬜ | `src/persistence/imageStore.ts` |
+| DataPersistence | 5 — Local server | ⬜ | `src/persistence/server.ts` |
 | Discovery Engine | 1 — Canvas core | ✅ Complete | `src/engine/discovery/canvasManager.ts` |
 | Discovery Engine | 2 — Chat integration | ⬜ | not started |
 | Discovery Engine | 3 — Consolidation | ⬜ | not started |
 | Discovery Engine | 4 — Gap analysis | ⬜ | not started |
 | Discovery Engine | 5 — Re-consolidation + review | ⬜ | not started |
 
-Tests: 35 passing (19 model, 16 canvas).
+Tests: 50 passing (19 model, 16 canvas, 15 persistence).
 
 ---
 
 ## What's Next
 
-**Immediate next step:** Phase 2 of the Discovery Engine — chat integration (AI extraction + brainstorming). Requires `Spec_ChatEngine.md` to be drafted, since extraction depends on the system prompt and intent-detection logic defined there.
+**Immediate next step:** DataPersistence Phase 2 — project lifecycle operations (create, open, list, delete, close) composing the Phase 1 primitives with `initializeProject` from the models layer. After that, Phase 3 wires the save queue so canvas edits actually flow to disk.
 
-**Parallel option:** Continue building DataModel Phases 2+4 and DataPersistence Phase 1 so the canvas has a real save path before adding AI features.
+**Parallel option:** DataModel Phase 2 (relationship helpers) and Phase 4 (phase-state transitions) can be picked up alongside DataPersistence — they don't block each other.
 
-**Specs still pending:** `Spec_Discovery_Design.md` (Phase B, Order 5), `Spec_ChatEngine.md` (Phase C, Order 6).
+**Specs still pending:** `Spec_Discovery_Design.md` (Phase B, Order 5), `Spec_ChatEngine.md` (Phase C, Order 6). Both need to be drafted before Discovery Engine Phase 2 (chat extraction + brainstorming) can begin.
