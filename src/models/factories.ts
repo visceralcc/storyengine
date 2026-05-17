@@ -11,6 +11,7 @@
 import { customAlphabet } from 'nanoid';
 
 import { DEFAULT_CONCEPT_TYPES } from './defaults';
+import { DEFAULT_NOTE_COLOR } from './noteColors';
 import type {
   AttachmentTargetType,
   ChatMessage,
@@ -24,6 +25,7 @@ import type {
   ImageSource,
   Insight,
   InsightType,
+  NoteColor,
   Phase,
   PhaseState,
   Position,
@@ -142,6 +144,7 @@ export interface CreateDiscoveryNoteInput {
   projectId: string;
   position: Position;
   content?: string;
+  color?: NoteColor;
   imageId?: string | null;
   clusterId?: string | null;
   now?: string;
@@ -154,6 +157,7 @@ export function createDiscoveryNote(input: CreateDiscoveryNoteInput): DiscoveryN
     projectId: input.projectId,
     content: input.content ?? '',
     position: { x: input.position.x, y: input.position.y },
+    color: input.color ?? DEFAULT_NOTE_COLOR,
     imageId: input.imageId ?? null,
     clusterId: input.clusterId ?? null,
     createdAt: now,

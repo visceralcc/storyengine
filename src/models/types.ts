@@ -28,6 +28,8 @@ export type AttachmentTargetType = 'CONCEPT' | 'DISCOVERY_NOTE';
 
 export type GapConfidence = 'STRONG' | 'PARTIAL';
 
+export type NoteColor = 'BLUE' | 'GREEN' | 'PURPLE' | 'GOLD' | 'PINK' | 'GRAY';
+
 // --- Shared shapes ---
 
 export interface Position {
@@ -85,6 +87,7 @@ export interface DiscoveryNote {
   projectId: string;
   content: string;
   position: Position;
+  color: NoteColor;
   imageId: string | null;
   clusterId: string | null;
   createdAt: string;

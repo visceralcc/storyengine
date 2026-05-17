@@ -10,7 +10,7 @@
  */
 
 import { createDiscoveryNote, nowISO } from '../../models/factories';
-import type { DiscoveryCluster, DiscoveryNote, Position } from '../../models/types';
+import type { DiscoveryCluster, DiscoveryNote, NoteColor, Position } from '../../models/types';
 
 // --- Single-note operations ---
 
@@ -18,6 +18,7 @@ export interface CreateNoteInput {
   projectId: string;
   position: Position;
   content?: string;
+  color?: NoteColor;
   now?: string;
 }
 
@@ -26,13 +27,15 @@ export interface CreateNoteInput {
  *
  * Per §2.2 "Manual placement," a note is created at the tapped position and
  * immediately enters edit mode with empty content. AI-extracted notes pass
- * their content in at creation time.
+ * their content in at creation time. Color comes from the currently selected
+ * swatch (Discovery_Design §3.3); omitted color falls back to the factory default.
  */
 export function createNote(input: CreateNoteInput): DiscoveryNote {
   return createDiscoveryNote({
     projectId: input.projectId,
     position: input.position,
     content: input.content ?? '',
+    color: input.color,
     now: input.now,
   });
 }

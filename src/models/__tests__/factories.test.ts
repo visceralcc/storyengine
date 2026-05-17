@@ -85,6 +85,7 @@ describe('createDiscoveryNote', () => {
     expect(note.projectId).toBe('proj_a');
     expect(note.content).toBe('');
     expect(note.position).toEqual({ x: 120, y: 240 });
+    expect(note.color).toBe('BLUE');
     expect(note.imageId).toBeNull();
     expect(note.clusterId).toBeNull();
     expect(ISO_8601.test(note.createdAt)).toBe(true);
@@ -96,6 +97,15 @@ describe('createDiscoveryNote', () => {
     const note = createDiscoveryNote({ projectId: 'proj_a', position: pos });
     pos.x = 999;
     expect(note.position.x).toBe(1);
+  });
+
+  it('accepts a non-default color', () => {
+    const note = createDiscoveryNote({
+      projectId: 'proj_a',
+      position: { x: 0, y: 0 },
+      color: 'PURPLE',
+    });
+    expect(note.color).toBe('PURPLE');
   });
 });
 
