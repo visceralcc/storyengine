@@ -1,7 +1,35 @@
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { initializeProject } from '../src/models/factories';
 
 const TEXT_DARK = '#1A1A1A';
+const HOVER_OPACITY = 0.7;
+
+type RowProps = {
+  label: string;
+  annotation: string;
+  onPress: () => void;
+};
+
+function ChooserRow({ label, annotation, onPress }: RowProps) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Pressable
+      style={styles.row}
+      onPress={onPress}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+    >
+      <View style={[styles.labelRow, hovered && styles.hovered]}>
+        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.annotation}>{annotation}</Text>
+      </View>
+      <View style={styles.gapAboveRule} />
+      <View style={styles.rule} />
+    </Pressable>
+  );
+}
 
 export default function ChooseRoute() {
   const router = useRouter();
@@ -11,29 +39,24 @@ export default function ChooseRoute() {
   };
 
   const onStartNew = () => {
-    router.push('/project/placeholder/steps');
+    const { project } = initializeProject({ name: 'Untitled Story' });
+    router.push(`/project/${project.id}/steps`);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.contentBlock}>
-        <Pressable style={styles.row} onPress={onOpenExisting}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>Open existing Story</Text>
-            <Text style={styles.annotation}>past</Text>
-          </View>
-          <View style={styles.gapAboveRule} />
-          <View style={styles.rule} />
-        </Pressable>
+        <ChooserRow
+          label="Open existing Story"
+          annotation="past"
+          onPress={onOpenExisting}
+        />
         <View style={styles.gapBetweenRows} />
-        <Pressable style={styles.row} onPress={onStartNew}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>Start New Story</Text>
-            <Text style={styles.annotation}>prologue</Text>
-          </View>
-          <View style={styles.gapAboveRule} />
-          <View style={styles.rule} />
-        </Pressable>
+        <ChooserRow
+          label="Start New Story"
+          annotation="prologue"
+          onPress={onStartNew}
+        />
       </View>
     </View>
   );
@@ -79,5 +102,8 @@ const styles = StyleSheet.create({
   },
   gapBetweenRows: {
     height: 50,
+  },
+  hovered: {
+    opacity: HOVER_OPACITY,
   },
 });

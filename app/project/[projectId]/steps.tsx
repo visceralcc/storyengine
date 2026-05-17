@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -14,12 +15,13 @@ type StepRowProps = {
 };
 
 function StepRow({ number, name, locked, onPress }: StepRowProps) {
+  const [hovered, setHovered] = useState(false);
   const textColor = locked ? TEXT_LOCKED : TEXT_UNLOCKED;
   const ruleColor = locked ? RULE_LOCKED : RULE_UNLOCKED;
 
-  const content = (
+  const content = (hover: boolean) => (
     <>
-      <View style={styles.labelRow}>
+      <View style={[styles.labelRow, hover && styles.hovered]}>
         <Text style={[styles.number, { color: textColor }]}>{number}</Text>
         <Text style={[styles.name, { color: textColor }]}>{name}</Text>
       </View>
@@ -29,11 +31,16 @@ function StepRow({ number, name, locked, onPress }: StepRowProps) {
   );
 
   if (locked) {
-    return <View style={styles.row}>{content}</View>;
+    return <View style={styles.row}>{content(false)}</View>;
   }
   return (
-    <Pressable style={styles.row} onPress={onPress}>
-      {content}
+    <Pressable
+      style={styles.row}
+      onPress={onPress}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+    >
+      {content(hovered)}
     </Pressable>
   );
 }
@@ -99,5 +106,8 @@ const styles = StyleSheet.create({
   },
   gapBetweenRows: {
     height: 21,
+  },
+  hovered: {
+    opacity: 0.7,
   },
 });
