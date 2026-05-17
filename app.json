@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "storyengine",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.storyengine.app"
@@ -19,6 +20,9 @@
     "web": {
       "bundler": "metro",
       "output": "single"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

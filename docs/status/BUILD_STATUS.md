@@ -1,6 +1,6 @@
 # Story Engine — Build Status
 
-**Last updated:** May 14, 2026
+**Last updated:** May 16, 2026
 
 ---
 
@@ -17,7 +17,7 @@ Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). 
 | 1 | PRD | ✅ Complete | `Spec_Story_Engine_PRD.md` — v0.3, four-phase pipeline model |
 | 2 | Templates | ✅ Complete | `Templates_SpecDocs.md` — Tech Spec, Design Spec, Buildable Unit templates |
 | 3 | Structure Map | ✅ Complete | `Structure_Map.md` — v0.2, rewritten for pipeline model. 8 feature folders, 13 Level 2 specs. |
-| 4 | Level 2 Specs | 🟡 In progress | 4 of 13 complete |
+| 4 | Level 2 Specs | 🟡 In progress | 8 of 15 complete |
 | 5 | Level 3 Buildable Units | ⬜ Not started | ~22 anticipated, depends on Level 2 |
 | 6 | Claude Code Handoff | ⬜ Not started | Implementation begins here |
 | 7 | Spec Updates | ⬜ Not started | Ongoing as implementation reveals gaps |
@@ -34,9 +34,11 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | A — Foundation | 2 | `Spec_DataPersistence.md` | ✅ Complete (v0.2) |
 | A — Foundation | 3 | `Spec_Navigation.md` | ✅ Complete (v0.2) |
 | B — Discovery | 4 | `Spec_DiscoveryEngine.md` | ✅ Complete (v0.1) |
-| B — Discovery | 5 | `Spec_Discovery_Design.md` | ⬜ Next up |
-| C — Core Engine | 6 | `Spec_ChatEngine.md` | ⬜ |
-| D — Surfaces | 7 | `Spec_StartScreen_Design.md` | ⬜ |
+| B — Discovery | 5 | `Spec_Discovery_Design.md` | ✅ Complete (v0.1) |
+| C — Core Engine | 6 | `Spec_ChatEngine.md` | ⬜ Next up |
+| D — Surfaces | 7 | `Spec_SplashScreen_Design.md` | ✅ Complete (v0.1) |
+| D — Surfaces | 7b | `Spec_ProjectChooser_Design.md` | ✅ Complete (v0.1) |
+| D — Surfaces | 7c | `Spec_StepMenu_Design.md` | ✅ Complete (v0.1) |
 | D — Surfaces | 8 | `Spec_Workspace_Design.md` | ⬜ |
 | E — Enrichment | 9 | `Spec_InsightsEngine.md` | ⬜ |
 | E — Enrichment | 10 | `Spec_InsightsPanel_Design.md` | ⬜ |
@@ -80,12 +82,28 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Full re-consolidation | Returning to Discovery + re-consolidating replaces all clusters from full note pool | DiscoveryEngine v0.1 |
 | Discovery chat included | Chat panel on Discovery canvas for brainstorming + stream-of-consciousness extraction | DiscoveryEngine v0.1 |
 | Narrative UI for gap filling | Development AI surfaces gaps through natural conversation, not checklists | DiscoveryEngine v0.1 (§6.3) |
+| Note colors in v1 | 6-color palette (Blue, Green, Purple, Gold, Pink, Gray) for Discovery Notes. Purely visual — AI ignores color during consolidation. Adds `color: NoteColor` to DiscoveryNote entity. | Discovery_Design v0.1 |
+| Entry flow is three screens | Splash → Project Chooser → Step Menu (replaces single "Start Screen" concept) | SplashScreen_Design v0.1, ProjectChooser_Design v0.1, StepMenu_Design v0.1 |
+| Splash is tap-anywhere-to-continue | No buttons on splash — full-bleed video + centered title, any tap/key advances | SplashScreen_Design v0.1 |
+| Phase locking on Step Menu | Phases unlock sequentially — only completed + next phase are tappable | StepMenu_Design v0.1 |
+| Project List is separate screen | "Open existing Story" navigates to a dedicated Project List screen/overlay | ProjectChooser_Design v0.1 |
+| Entry flow typography exceptions | 260pt (Splash), 96pt (Step Menu), 40pt (Chooser) intentionally exceed 36pt HARD_RULES max | SplashScreen_Design v0.1 |
+| Body font: Noticia Text | Noticia Text (Google Fonts slab serif) replaces Noto Serif as canonical body/content font. Pending update to HARD_RULES.md and DESIGN.md. | Discovery_Design v0.1 |
+| Chat panel label: "Assistant" | Chat panel labeled "Assistant" across all phases. Placeholder name — can be changed later. | Discovery_Design v0.1 |
 
 ---
 
 ## Data Model Additions Pending
 
-The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMapping` interfaces and extends `PhaseState.discovery` with a `gapAnalysis` field. These additions need to be incorporated into `Spec_DataModel.md` in a v0.3 revision.
+The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMapping` interfaces and extends `PhaseState.discovery` with a `gapAnalysis` field. The Discovery Design spec (v0.1) introduces `NoteColor` type and adds `color: NoteColor` to the `DiscoveryNote` interface. Both additions need to be incorporated into `Spec_DataModel.md` in a v0.3 revision.
+
+---
+
+## Companion Doc Updates Pending
+
+The body font change from Noto Serif to Noticia Text (decided in Discovery_Design v0.1) needs to be applied to:
+- `HARD_RULES.md` — Visual Language table, body font row
+- `DESIGN.md` — Typography section, all "Noto Serif" references → "Noticia Text"
 
 ---
 
@@ -95,14 +113,18 @@ The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMappin
 |------|------|--------|
 | `Spec_Story_Engine_PRD.md` | PRD (Level 1) | ✅ Complete (v0.3) |
 | `status/BUILD_STATUS.md` | Companion | ✅ Current file |
-| `HARD_RULES.md` | Companion | ✅ Updated for v0.3 |
+| `HARD_RULES.md` | Companion | ✅ Updated for v0.3 — pending font update |
 | `OVERVIEW.md` | Companion | ✅ Updated for v0.3 |
 | `Templates_SpecDocs.md` | Templates | ✅ Complete (v0.1) |
 | `Structure_Map.md` | Structure | ✅ Complete (v0.2) |
-| `foundation/Spec_DataModel.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) — needs v0.3 for GapAnalysis addition |
+| `foundation/Spec_DataModel.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) — needs v0.3 for GapAnalysis + NoteColor additions |
 | `foundation/Spec_DataPersistence.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
 | `foundation/Spec_Navigation.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
 | `discovery/Spec_DiscoveryEngine.md` | Tech Spec (Level 2) | ✅ Complete (v0.1) |
+| `discovery/Spec_Discovery_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
+| `start-screen/Spec_SplashScreen_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
+| `start-screen/Spec_ProjectChooser_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
+| `start-screen/Spec_StepMenu_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 
 ---
 
@@ -136,4 +158,8 @@ Tests: 50 passing (19 model, 16 canvas, 15 persistence).
 
 **Parallel option:** DataModel Phase 2 (relationship helpers) and Phase 4 (phase-state transitions) can be picked up alongside DataPersistence — they don't block each other.
 
-**Specs still pending:** `Spec_Discovery_Design.md` (Phase B, Order 5), `Spec_ChatEngine.md` (Phase C, Order 6). Both need to be drafted before Discovery Engine Phase 2 (chat extraction + brainstorming) can begin.
+**Specs next up:** `Spec_ChatEngine.md` (Phase C, Order 6). This is the next spec to write — it unblocks Discovery Engine Phase 2 (chat extraction + brainstorming). The entry flow specs (Splash, Project Chooser, Step Menu) are complete and ready for implementation alongside the existing foundation work.
+
+**Navigation spec update needed:** `Spec_Navigation.md` (v0.2) defines `/` as a single "Start Screen" route. The entry flow is now three screens (Splash → Project Chooser → Step Menu). The nav spec needs a v0.3 revision to define how these three screens share or split routes, and to add the Project List screen route.
+
+**Companion doc updates needed:** HARD_RULES.md and DESIGN.md need body font updated from Noto Serif to Noticia Text. DataModel needs v0.3 revision for NoteColor type and GapAnalysis interfaces.
