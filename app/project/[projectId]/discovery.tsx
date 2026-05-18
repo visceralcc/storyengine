@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import {
   Image,
@@ -18,12 +18,21 @@ import {
   updateNoteContent,
   updateNotePosition,
 } from '../../../src/engine/discovery/canvasManager';
+import { createChatMessage } from '../../../src/models/factories';
 import {
   DEFAULT_NOTE_COLOR,
   NOTE_COLOR_HEX,
   NOTE_COLOR_ORDER,
 } from '../../../src/models/noteColors';
-import type { DiscoveryCluster, DiscoveryNote, NoteColor, Position } from '../../../src/models/types';
+import type {
+  ChatMessage,
+  DiscoveryCluster,
+  DiscoveryNote,
+  NoteColor,
+  Position,
+  ProjectFile,
+} from '../../../src/models/types';
+import { getDefaultProjectStore } from '../../../src/persistence/projectStore';
 
 const NOTE_TOGGLE_ACTIVE = require('../../../assets/buttons/button_note_active.svg');
 const NOTE_TOGGLE_INACTIVE = require('../../../assets/buttons/button_note_inactive.svg');
@@ -80,32 +89,104 @@ const CONSOLIDATE_MIN_NOTES = 3;
 const TOO_FEW_FADE_MS = 3000;
 const LOADING_DEMO_RESET_MS = 2500;
 
-type ChatMessage = {
-  id: string;
-  role: 'assistant' | 'user';
-  content: string;
-};
-
-const INITIAL_MESSAGES: ChatMessage[] = [
-  { id: 'msg_initial', role: 'assistant', content: 'How can I help?' },
-];
-
 export default function DiscoveryRoute() {
   const params = useLocalSearchParams<{ projectId: string }>();
   const projectId = params.projectId ?? 'unknown';
 
+  const [projectFile, setProjectFile] = useState<ProjectFile | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getDefaultProjectStore()
+      .loadProject(projectId)
+      .then((file) => {
+        if (!cancelled) setProjectFile(file);
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setLoadError(err.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  if (loadError) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadError}>Could not load project: {loadError}</Text>
+      </View>
+    );
+  }
+  if (!projectFile) {
+    return <View style={styles.container} />;
+  }
+  return <DiscoveryWorkspace projectId={projectId} initialProjectFile={projectFile} />;
+}
+
+type DiscoveryWorkspaceProps = {
+  projectId: string;
+  initialProjectFile: ProjectFile;
+};
+
+function DiscoveryWorkspace({ projectId, initialProjectFile }: DiscoveryWorkspaceProps) {
   const [selectedColor, setSelectedColor] = useState<NoteColor>(DEFAULT_NOTE_COLOR);
   const [placementActive, setPlacementActive] = useState(false);
-  const [notes, setNotes] = useState<DiscoveryNote[]>([]);
-  const [clusters, setClusters] = useState<DiscoveryCluster[]>([]);
+  const [notes, setNotes] = useState<DiscoveryNote[]>(initialProjectFile.discoveryNotes);
+  const [clusters, setClusters] = useState<DiscoveryCluster[]>(
+    initialProjectFile.phaseState.discovery.clusters,
+  );
+  // v1 only renders Discovery-phase messages here. Later phases will filter
+  // their own slice from chatMessages (Spec_DataModel.md §10).
+  const initialMessages = useMemo(
+    () => initialProjectFile.chatMessages.filter((m) => m.phase === 'DISCOVERY'),
+    [initialProjectFile],
+  );
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+
+  // Persist on any change to notes / clusters / messages. Skip the first run
+  // so we don't write back the just-loaded bundle. Phase 3 of the persistence
+  // spec adds debounce + a save queue; for v1 every change writes immediately.
+  const skipNextSave = useRef(true);
+  useEffect(() => {
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
+    const otherPhaseMessages = initialProjectFile.chatMessages.filter(
+      (m) => m.phase !== 'DISCOVERY',
+    );
+    const updated: ProjectFile = {
+      ...initialProjectFile,
+      discoveryNotes: notes,
+      phaseState: {
+        ...initialProjectFile.phaseState,
+        discovery: {
+          ...initialProjectFile.phaseState.discovery,
+          clusters,
+        },
+      },
+      chatMessages: [...otherPhaseMessages, ...messages],
+      project: {
+        ...initialProjectFile.project,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    getDefaultProjectStore()
+      .saveProject(updated)
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[discovery] save failed', err);
+      });
+  }, [notes, clusters, messages, initialProjectFile]);
 
   return (
     <View style={styles.container}>
       <PhaseHeader />
       <View style={styles.contentRow}>
         <View style={styles.leftColumn}>
-          <ChatPanel />
+          <ChatPanel projectId={projectId} messages={messages} setMessages={setMessages} />
           <ConsolidateButton noteCount={notes.length} />
         </View>
         <NoteToolStrip
@@ -147,20 +228,27 @@ function PhaseHeader() {
   );
 }
 
-function ChatPanel() {
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+type ChatPanelProps = {
+  projectId: string;
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+};
+
+function ChatPanel({ projectId, messages, setMessages }: ChatPanelProps) {
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   const send = () => {
     const trimmed = draft.trim();
     if (!trimmed) return;
-    setMessages((prev) => [
-      ...prev,
-      { id: `msg_${Date.now()}`, role: 'user', content: trimmed },
-    ]);
+    const msg = createChatMessage({
+      projectId,
+      phase: 'DISCOVERY',
+      role: 'user',
+      content: trimmed,
+    });
+    setMessages((prev) => [...prev, msg]);
     setDraft('');
-    // Scroll to latest after layout settles
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   };
 
@@ -184,6 +272,10 @@ function ChatPanel() {
         style={styles.chatMessages}
         contentContainerStyle={styles.chatMessagesContent}
       >
+        {/* Welcome bubble — a UI affordance, not part of the persisted history. */}
+        <View style={[styles.bubble, styles.bubbleAi]}>
+          <Text style={styles.bubbleTextAi}>How can I help?</Text>
+        </View>
         {messages.map((m) => (
           <View
             key={m.id}
@@ -1002,5 +1094,11 @@ const styles = StyleSheet.create({
     opacity: GHOST_OPACITY,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.25)',
+  },
+  loadError: {
+    padding: 32,
+    fontFamily: 'Aleo_400Regular',
+    fontSize: 16,
+    color: TEXT_DARK,
   },
 });
