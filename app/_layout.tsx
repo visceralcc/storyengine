@@ -1,13 +1,14 @@
 import { Stack } from 'expo-router';
 import { useFonts, Barlow_100Thin, Barlow_500Medium } from '@expo-google-fonts/barlow';
-import { Domine_400Regular, Domine_700Bold } from '@expo-google-fonts/domine';
+import { Aleo_400Regular, Aleo_400Regular_Italic, Aleo_700Bold } from '@expo-google-fonts/aleo';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Barlow_100Thin,
     Barlow_500Medium,
-    Domine_400Regular,
-    Domine_700Bold,
+    Aleo_400Regular,
+    Aleo_400Regular_Italic,
+    Aleo_700Bold,
   });
 
   if (!fontsLoaded) {

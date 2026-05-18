@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     width: CHAT_PANEL_LEFT_PAD + CHAT_PANEL_WIDTH - HEADER_LEFT_PAD,
   },
   phaseNumber: {
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: 36,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     flex: 1,
-    fontFamily: 'Domine_700Bold',
+    fontFamily: 'Aleo_700Bold',
     fontSize: 20,
     color: TEXT_MUTED,
     includeFontPadding: false,
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     marginLeft: 24,
   },
   avatarText: {
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: 14,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -796,21 +796,21 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   consolidateText: {
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: 16,
     color: TEXT_DARK,
     includeFontPadding: false,
   },
   consolidateHint: {
     marginTop: 8,
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: 14,
     color: TEXT_SECONDARY,
     includeFontPadding: false,
     textAlign: 'center',
   },
   chatLabel: {
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: 16,
     color: TEXT_SECONDARY,
     includeFontPadding: false,
@@ -835,13 +835,13 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   bubbleTextAi: {
-    fontFamily: 'Domine_700Bold',
+    fontFamily: 'Aleo_700Bold',
     fontSize: 16,
     color: TEXT_SECONDARY,
     includeFontPadding: false,
   },
   bubbleTextUser: {
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: 16,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -857,7 +857,7 @@ const styles = StyleSheet.create({
   },
   chatInput: {
     flex: 1,
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: 14,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -959,7 +959,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   noteText: {
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: NOTE_FONT_SIZE,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -967,7 +967,7 @@ const styles = StyleSheet.create({
   },
   noteInput: {
     flex: 1,
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
     fontSize: NOTE_FONT_SIZE,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 14,
     includeFontPadding: false,
-    fontFamily: 'Domine_400Regular',
+    fontFamily: 'Aleo_400Regular',
   },
   ghostNote: {
     position: 'absolute',

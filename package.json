@@ -22,8 +22,8 @@
     ]
   },
   "dependencies": {
+    "@expo-google-fonts/aleo": "^0.4.2",
     "@expo-google-fonts/barlow": "^0.4.1",
-    "@expo-google-fonts/domine": "^0.4.2",
     "@expo/metro-runtime": "~4.0.1",
     "expo": "~52.0.46",
     "expo-constants": "~17.0.8",

@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   annotation: {
-    fontFamily: 'Domine_700Bold',
+    fontFamily: 'Aleo_700Bold',
     fontSize: 24,
     color: TEXT_DARK,
     includeFontPadding: false,
