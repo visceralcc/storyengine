@@ -1,20 +1,13 @@
 import { Stack } from 'expo-router';
 import { useFonts, Barlow_100Thin, Barlow_500Medium } from '@expo-google-fonts/barlow';
-import {
-  NoticiaText_400Regular,
-  NoticiaText_400Regular_Italic,
-  NoticiaText_700Bold,
-  NoticiaText_700Bold_Italic,
-} from '@expo-google-fonts/noticia-text';
+import { Domine_400Regular, Domine_700Bold } from '@expo-google-fonts/domine';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Barlow_100Thin,
     Barlow_500Medium,
-    NoticiaText_400Regular,
-    NoticiaText_400Regular_Italic,
-    NoticiaText_700Bold,
-    NoticiaText_700Bold_Italic,
+    Domine_400Regular,
+    Domine_700Bold,
   });
 
   if (!fontsLoaded) {
