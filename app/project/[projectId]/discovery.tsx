@@ -404,12 +404,21 @@ function Canvas({
   };
 
   const cursor = placementActive ? 'crosshair' : 'grab';
+
+  // Trackpad two-finger pan (web): subtract wheel deltas so the canvas
+  // viewport feels like a camera — swipe up/right scrolls the world up/right.
+  const onWheel = (e: { deltaX: number; deltaY: number; preventDefault?: () => void }) => {
+    e.preventDefault?.();
+    setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+  };
+
   // pointer + cursor are web-only props that aren't in RN's ViewProps/ViewStyle.
   const webProps: Record<string, unknown> = {
     onPointerDown: onBackdropPointerDown,
     onPointerMove: onBackdropPointerMove,
     onPointerUp: onBackdropPointerUp,
     onPointerLeave: onBackdropPointerLeave,
+    onWheel,
   };
 
   return (
@@ -787,14 +796,14 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   consolidateText: {
-    fontFamily: 'NoticiaText_400Regular',
+    fontFamily: 'Domine_400Regular',
     fontSize: 16,
     color: TEXT_DARK,
     includeFontPadding: false,
   },
   consolidateHint: {
     marginTop: 8,
-    fontFamily: 'NoticiaText_400Regular',
+    fontFamily: 'Domine_400Regular',
     fontSize: 14,
     color: TEXT_SECONDARY,
     includeFontPadding: false,
