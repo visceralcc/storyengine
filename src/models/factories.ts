@@ -30,7 +30,11 @@ import type {
   PhaseState,
   Position,
   Project,
+  ProjectFile,
 } from './types';
+
+// Current project.json schema version (Spec_DataPersistence.md §3).
+export const CURRENT_SCHEMA_VERSION = 2;
 
 // nanoid: default URL-safe alphabet, length 8 after prefix (§2).
 const NANOID_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
@@ -335,4 +339,23 @@ export function initializeProject(input: InitializeProjectInput): NewProjectBund
   const phaseState = createPhaseState({ projectId: project.id });
   const conceptTypes = seedDefaultConceptTypes(project.id, now);
   return { project, phaseState, conceptTypes };
+}
+
+/**
+ * Build a complete {@link ProjectFile} for a brand-new project. The bundle is
+ * what gets handed to projectStore.saveProject on creation.
+ */
+export function createInitialProjectFile(input: InitializeProjectInput): ProjectFile {
+  const { project, phaseState, conceptTypes } = initializeProject(input);
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    project,
+    phaseState,
+    discoveryNotes: [],
+    conceptTypes,
+    concepts: [],
+    chatMessages: [],
+    images: [],
+    insights: [],
+  };
 }
