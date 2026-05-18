@@ -4,9 +4,9 @@
 
 ---
 
-## Current Phase: Implementing (Discovery UI shell complete)
+## Current Phase: Implementing (Discovery UI persisted)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, and DataPersistence Phase 1 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is now complete end-to-end (Phases 1–6): phase header, chat panel with local message state, note color picker with placement toggle, pannable canvas with note placement / edit / drag / delete, Consolidate Ideas button (stub), and trackpad pan polish. AI/consolidation engine integration is still pending.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, and DataPersistence Phases 1–2 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. AI/consolidation engine integration is still pending.
 
 ---
 
@@ -136,7 +136,7 @@ _None._ Body font Noto Serif → Domine (final, after a Noticia Text waystation)
 | DataModel | 3 — Default ConceptType seeding | ✅ Complete (rolled into Phase 1) | `src/models/defaults.ts` |
 | DataModel | 4 — Phase state management | ⬜ | TBD |
 | DataPersistence | 1 — Atomic writes + recovery | ✅ Complete | `src/persistence/paths.ts`, `src/persistence/atomicWrite.ts` |
-| DataPersistence | 2 — Project lifecycle | ⬜ | `src/persistence/projectStore.ts` |
+| DataPersistence | 2 — Project lifecycle | ✅ Complete | `src/persistence/storage.ts`, `src/persistence/projectStore.ts`; wired into `app/choose.tsx` + `app/project/[projectId]/discovery.tsx` |
 | DataPersistence | 3 — Save queue | ⬜ | `src/persistence/saveQueue.ts` |
 | DataPersistence | 4 — Image management | ⬜ | `src/persistence/imageStore.ts` |
 | DataPersistence | 5 — Local server | ⬜ | `src/persistence/server.ts` |
@@ -158,16 +158,17 @@ _None._ Body font Noto Serif → Domine (final, after a Noticia Text waystation)
 | **Discovery UI** | **Phase 5 — Consolidate Ideas button (UI stub)** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
 | **Discovery UI** | **Phase 6 — Trackpad pan + flow verification** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
 
-Tests: 51 passing (20 model, 16 canvas, 15 persistence).
+Tests: 64 passing (20 model, 16 canvas, 28 persistence).
 
 ---
 
 ## What's Next
 
-**Immediate next step:** Wire the Discovery UI to real persistence and AI. The canvas currently holds notes and clusters in local `useState` — nothing is saved. The next priorities are:
+**Immediate next step:** Layer AI on top of the now-persisted Discovery surface. Project lifecycle (DataPersistence Phase 2) is complete — projects and Discovery state survive a page refresh via `localStorage` (the spec's local server is still Phase 5). The next priorities are:
 - `Spec_ChatEngine.md` (Phase C, Order 6) — unblocks AI chat responses and stream-of-consciousness extraction
 - Discovery Engine Phases 2–5 — consolidation, gap analysis, re-consolidation
-- DataPersistence Phase 2 — project lifecycle so projects (and Discovery notes) actually save to disk
+- DataPersistence Phase 3 — save queue with debounce + flush priority (today every change writes immediately)
+- A dedicated Project List screen — the chooser currently shows an inline list as a Phase 2 placeholder
 
 **Companion doc updates still pending:** DataModel needs v0.3 revision to roll up the in-code NoteColor type and the GapAnalysis interfaces from Discovery_Design v0.1 / DiscoveryEngine v0.1.
 
