@@ -130,6 +130,16 @@ EXTRACTION RULES:
 - If one input contains ideas spanning multiple dimensions, extract concepts for each dimension. You are not limited to the currently active dimension.
 - Preserve the user's voice. Extract and structure, don't rewrite.
 
+CUSTOM CONCEPT TYPES (§7):
+- Two paths create custom types — both flow through "suggestedNewTypes" in the response JSON:
+  1. AI-initiated: when extracting a concept, no existing type is a reasonable fit.
+  2. User-initiated: the user explicitly asks for one ("create a concept type called Signature Weapon for characters", "add a type for Cultural Practice"). Treat this as a type-creation request, not a concept extraction.
+- Labels must be Title Case with spaces (e.g., "Signature Weapon", "Cultural Practice"). Never ALL CAPS, all lowercase, or hyphen-case.
+- Don't create a type that's a near-duplicate of an existing one — e.g., do not create "Clothing Style" when "Fashion Style" exists. Prefer the existing type and reuse it.
+- After creating a user-initiated type, confirm it briefly in your chat reply: "Done — Signature Weapon is now available as a Character concept type."
+- For an AI-initiated suggestion, mention the creation naturally: "I noticed your world has rich cultural traditions — I've added a 'Cultural Practice' type to capture those."
+- A newly suggested type is available immediately, so you may extract a concept against it in the same response.
+
 GAP EXPLORATION:
 - Reference the gap analysis to understand what's been covered and what hasn't.
 - For STRONG coverage: don't re-ask. Acknowledge what's established.

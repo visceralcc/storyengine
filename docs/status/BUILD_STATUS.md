@@ -1,12 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 18, 2026 (Chat Engine Phase 4 complete)
+**Last updated:** May 18, 2026 (Chat Engine Phase 5 complete)
 
 ---
 
-## Current Phase: Implementing (Chat Engine Phase 4 complete)
+## Current Phase: Implementing (Chat Engine Phase 5 complete)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and Chat Engine Phases 1–4 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine now covers the full text pipeline end-to-end: streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly (Phase 2), Discovery response parser + viewport-placement extraction (Phase 3), and Development/Refinement response parsing + Concept/ConceptType/Version creation + REFINE/RETHINK refinement logic (Phase 4). UI wire-up and remaining Chat Engine phases 5–7 are next.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and Chat Engine Phases 1–5 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine now covers the full text pipeline end-to-end: streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly (Phase 2), Discovery response parser + viewport-placement extraction (Phase 3), Development/Refinement response parsing + Concept/ConceptType/Version creation + REFINE/RETHINK refinement logic (Phase 4), and custom ConceptType creation guardrails for both AI- and user-initiated requests (Phase 5). UI wire-up and Chat Engine phases 6–7 (gap-aware conversation, Refinement) are next.
 
 ---
 
@@ -167,17 +167,17 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | Chat Engine | 2 — Context assembly | ✅ Complete | `src/engine/chat/prompts.ts`, `src/engine/chat/context.ts` |
 | Chat Engine | 3 — Discovery chat integration | ✅ Complete | `src/engine/chat/parser.ts`, `src/engine/chat/extraction.ts` |
 | Chat Engine | 4 — Development chat integration | ✅ Complete | `src/engine/chat/parser.ts` (parseExtractionResponse), `src/engine/chat/refinement.ts`, `src/engine/chat/extraction.ts` (applyConceptExtraction) |
-| Chat Engine | 5 — Custom ConceptType creation | ⬜ | not started |
+| Chat Engine | 5 — Custom ConceptType creation | ✅ Complete | `src/engine/chat/prompts.ts` (Development §7 guardrails) + integration tests in `__tests__/conceptTypes.test.ts` |
 | Chat Engine | 6 — Gap-aware conversation | ⬜ | not started |
 | Chat Engine | 7 — Refinement chat integration | ⬜ | not started |
 
-Tests: 158 passing (20 model, 16 canvas, 28 persistence, 94 chat).
+Tests: 166 passing (20 model, 16 canvas, 28 persistence, 102 chat).
 
 ---
 
 ## What's Next
 
-**Immediate next step:** Chat Engine Phase 5 — custom ConceptType creation. Most of this already lives inside `applyConceptExtraction` (AI-initiated path); Phase 5 layers in user-initiated requests ("Create a Concept Type called 'Signature Weapon'…") via intent detection and routes to the same factory. Phase 6 (gap-aware conversation: opening-message generator from creative gravity, gap analysis wired into Development context) and Phase 7 (Refinement chat) follow. UI wire-up — connecting the Discovery chat panel to `createChatClient` + `parseDiscoveryResponse` + `extractDiscoveryNotes` — is also a near-term task. `Spec_Workspace_Design.md` (Phase D, Order 8) is the next pending Design Spec.
+**Immediate next step:** Chat Engine Phase 6 — gap-aware conversation. Implement the opening-message generator keyed on creative gravity (§9.1: four message patterns for `CHARACTER` / `WORLD` / `CONFLICT` / null gravity) and wire the gap analysis through the Development context — most of the wiring already lives in `buildDevelopmentContext` (Phase 2); Phase 6 layers in the first-entry message persistence and verifies the AI's avoidance of `STRONG` topics. Phase 7 (Refinement chat — system prompt already in `prompts.ts`; needs end-to-end verification with Storyline ConceptTypes) follows. UI wire-up — connecting the Discovery chat panel to `createChatClient` + `parseDiscoveryResponse` + `extractDiscoveryNotes` — is also a near-term task. `Spec_Workspace_Design.md` (Phase D, Order 8) is the next pending Design Spec.
 
 **Companion doc updates still pending:** DataModel needs v0.3 revision to roll up the in-code NoteColor type and the GapAnalysis interfaces from Discovery_Design v0.1 / DiscoveryEngine v0.1.
 
