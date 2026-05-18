@@ -4,6 +4,18 @@ All notable changes, logged per session. Tags: `[ui]` `[data]` `[infra]` `[spec]
 
 ---
 
+## 2026-05-17
+
+- [ui] Built entry flow UI — Phases 2–5 complete. Four commits on main:
+  - Phase 2: Splash screen (`app/index.tsx`) — "STORYENGINE" in Barlow Thin, responsive font size min(260pt, 14vw), white→dark background transition over 500ms simulating video load, tap-anywhere or any-keypress navigation to /choose. Uses Animated API for color transitions (useNativeDriver: false).
+  - Phase 3: Project Chooser (`app/choose.tsx`) — two rows ("Open existing Story" / "Start New Story") with Barlow Thin 40pt labels and Noticia Text Bold Italic 24pt annotations ("past" / "prologue"). 922px horizontal rules. Upper-left quadrant composition with percentage-based positioning.
+  - Phase 4: Step Menu (`app/project/[projectId]/steps.tsx`) — three phase rows (Discovery / Development / Refinement) in Barlow Thin 96pt. Locked/unlocked visuals (#1A1A1A vs #999999 text, dark vs #D2D2D2 rules). Only Discovery tappable; locked rows use View instead of Pressable.
+  - Phase 5: Polish — "Start New Story" now calls `initializeProject({ name: 'Untitled Story' })` for real project IDs. Hover states (opacity 0.7) on tappable rows via onHoverIn/onHoverOut.
+- [infra] Installed expo-font, @expo-google-fonts/barlow, @expo-google-fonts/noticia-text.
+- [ui] Font loading centralized in `app/_layout.tsx` — Barlow_100Thin and NoticiaText_700Bold_Italic loaded via useFonts, returns null until ready.
+- [docs] Updated BUILD_STATUS.md — entry flow implementation complete, Discovery UI marked as next.
+- [docs] Created docs/handoffs/ folder with EntryFlow_Phases2-5_Handoff.md and Discovery_Screen_Handoff.md.
+
 ## 2026-05-14
 
 - [infra] Scaffolded Expo SDK 52 + TypeScript + Jest (jest-expo preset). Added nanoid to transformIgnorePatterns so its CJS build resolves under Jest.

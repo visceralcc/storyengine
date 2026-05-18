@@ -1,12 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 16, 2026
+**Last updated:** May 17, 2026
 
 ---
 
-## Current Phase: Implementing (Phase B — Discovery)
+## Current Phase: Implementing (Entry Flow complete, Discovery UI next)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1 and Discovery Engine Phase 1 are complete with passing unit tests. This document tracks the Ideas-to-Code process steps and current implementation progress.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, and DataPersistence Phase 1 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. Discovery UI build is next.
 
 ---
 
@@ -19,7 +19,7 @@ Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). 
 | 3 | Structure Map | ✅ Complete | `Structure_Map.md` — v0.2, rewritten for pipeline model. 8 feature folders, 13 Level 2 specs. |
 | 4 | Level 2 Specs | 🟡 In progress | 8 of 15 complete |
 | 5 | Level 3 Buildable Units | ⬜ Not started | ~22 anticipated, depends on Level 2 |
-| 6 | Claude Code Handoff | ⬜ Not started | Implementation begins here |
+| 6 | Claude Code Handoff | 🟡 In progress | Entry flow implemented; Discovery UI next |
 | 7 | Spec Updates | ⬜ Not started | Ongoing as implementation reveals gaps |
 
 ---
@@ -147,6 +147,16 @@ The body font change from Noto Serif to Noticia Text (decided in Discovery_Desig
 | Discovery Engine | 3 — Consolidation | ⬜ | not started |
 | Discovery Engine | 4 — Gap analysis | ⬜ | not started |
 | Discovery Engine | 5 — Re-consolidation + review | ⬜ | not started |
+| **Entry Flow UI** | **Splash Screen** | **✅ Complete** | **`app/index.tsx`** |
+| **Entry Flow UI** | **Project Chooser** | **✅ Complete** | **`app/choose.tsx`** |
+| **Entry Flow UI** | **Step Menu** | **✅ Complete** | **`app/project/[projectId]/steps.tsx`** |
+| **Entry Flow UI** | **Font loading** | **✅ Complete** | **`app/_layout.tsx` (Barlow_100Thin, NoticiaText_700Bold_Italic)** |
+| **Entry Flow UI** | **Real project IDs** | **✅ Complete** | **`app/choose.tsx` uses initializeProject** |
+| Discovery UI | Screen shell + header | ⬜ Next up | `app/project/[projectId]/discovery.tsx` |
+| Discovery UI | Chat panel | ⬜ | |
+| Discovery UI | Color picker | ⬜ | |
+| Discovery UI | Canvas + notes | ⬜ | |
+| Discovery UI | Consolidate button | ⬜ | |
 
 Tests: 50 passing (19 model, 16 canvas, 15 persistence).
 
@@ -154,12 +164,13 @@ Tests: 50 passing (19 model, 16 canvas, 15 persistence).
 
 ## What's Next
 
-**Immediate next step:** DataPersistence Phase 2 — project lifecycle operations (create, open, list, delete, close) composing the Phase 1 primitives with `initializeProject` from the models layer. After that, Phase 3 wires the save queue so canvas edits actually flow to disk.
+**Immediate next step:** Discovery Screen UI build — replace the placeholder at `app/project/[projectId]/discovery.tsx` with the spec-accurate Discovery canvas. Handoff prompt written at `docs/handoffs/Discovery_Screen_Handoff.md`. Build phases: data model additions (NoteColor) → screen shell + header → chat panel → color picker → canvas + notes → consolidate button → polish.
 
-**Parallel option:** DataModel Phase 2 (relationship helpers) and Phase 4 (phase-state transitions) can be picked up alongside DataPersistence — they don't block each other.
+**After Discovery UI:** The canvas UI will be built without AI integration (local-only chat, no consolidation engine). The next priorities after the UI shell are:
+- `Spec_ChatEngine.md` (Phase C, Order 6) — unblocks AI chat responses and stream-of-consciousness extraction
+- Discovery Engine Phases 2–5 — consolidation, gap analysis, re-consolidation
+- DataPersistence Phase 2 — project lifecycle so projects actually save to disk
 
-**Specs next up:** `Spec_ChatEngine.md` (Phase C, Order 6). This is the next spec to write — it unblocks Discovery Engine Phase 2 (chat extraction + brainstorming). The entry flow specs (Splash, Project Chooser, Step Menu) are complete and ready for implementation alongside the existing foundation work.
+**Companion doc updates still pending:** HARD_RULES.md and DESIGN.md need body font updated from Noto Serif to Noticia Text. DataModel needs v0.3 revision for NoteColor type and GapAnalysis interfaces.
 
-**Navigation spec update needed:** `Spec_Navigation.md` (v0.2) defines `/` as a single "Start Screen" route. The entry flow is now three screens (Splash → Project Chooser → Step Menu). The nav spec needs a v0.3 revision to define how these three screens share or split routes, and to add the Project List screen route.
-
-**Companion doc updates needed:** HARD_RULES.md and DESIGN.md need body font updated from Noto Serif to Noticia Text. DataModel needs v0.3 revision for NoteColor type and GapAnalysis interfaces.
+**Navigation spec update needed:** `Spec_Navigation.md` (v0.2) defines `/` as a single "Start Screen" route. The entry flow is now three screens (Splash → Project Chooser → Step Menu) at routes `/`, `/choose`, and `/project/:projectId/steps`. The nav spec needs a v0.3 revision to reflect these routes.
