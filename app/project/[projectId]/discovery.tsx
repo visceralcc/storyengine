@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import {
   Image,
@@ -11,15 +11,22 @@ import {
   TextInputKeyPressEventData,
   View,
 } from 'react-native';
-
-const NOTE_TOGGLE_ACTIVE = require('../../../assets/buttons/button_note_active.svg');
-const NOTE_TOGGLE_INACTIVE = require('../../../assets/buttons/button_note_inactive.svg');
+import {
+  createNote,
+  deleteNote,
+  isNoteEmpty,
+  updateNoteContent,
+  updateNotePosition,
+} from '../../../src/engine/discovery/canvasManager';
 import {
   DEFAULT_NOTE_COLOR,
   NOTE_COLOR_HEX,
   NOTE_COLOR_ORDER,
 } from '../../../src/models/noteColors';
-import type { NoteColor } from '../../../src/models/types';
+import type { DiscoveryCluster, DiscoveryNote, NoteColor, Position } from '../../../src/models/types';
+
+const NOTE_TOGGLE_ACTIVE = require('../../../assets/buttons/button_note_active.svg');
+const NOTE_TOGGLE_INACTIVE = require('../../../assets/buttons/button_note_inactive.svg');
 
 // Tokens — Spec_Discovery_Design.md §3, §7
 const TEXT_DARK = '#1A1A1A';
@@ -52,6 +59,16 @@ const NOTE_TOGGLE_SIZE = 26;
 const TOGGLE_TO_SWATCH_GAP = 18;
 const SWATCH_RING_INSET = 4;
 
+// Canvas + notes — Spec_Discovery_Design.md §3.4, §4.1, §4.2, §7
+const NOTE_SIZE = 140;
+const NOTE_RADIUS = 6;
+const NOTE_PAD = 8;
+const NOTE_FONT_SIZE = 14;
+const GHOST_OPACITY = 0.45;
+const DELETE_BUTTON_SIZE = 18;
+const DRAG_PX_THRESHOLD = 5;
+const DRAG_MS_THRESHOLD = 150;
+
 type ChatMessage = {
   id: string;
   role: 'assistant' | 'user';
@@ -63,11 +80,14 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 ];
 
 export default function DiscoveryRoute() {
-  // projectId reserved for note CRUD wiring in Phase 4
-  useLocalSearchParams<{ projectId: string }>();
+  const params = useLocalSearchParams<{ projectId: string }>();
+  const projectId = params.projectId ?? 'unknown';
 
   const [selectedColor, setSelectedColor] = useState<NoteColor>(DEFAULT_NOTE_COLOR);
   const [placementActive, setPlacementActive] = useState(false);
+  const [notes, setNotes] = useState<DiscoveryNote[]>([]);
+  const [clusters, setClusters] = useState<DiscoveryCluster[]>([]);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   return (
     <View style={styles.container}>
@@ -80,7 +100,17 @@ export default function DiscoveryRoute() {
           placementActive={placementActive}
           onTogglePlacement={() => setPlacementActive((v) => !v)}
         />
-        <View style={styles.canvas} />
+        <Canvas
+          projectId={projectId}
+          notes={notes}
+          setNotes={setNotes}
+          clusters={clusters}
+          setClusters={setClusters}
+          selectedColor={selectedColor}
+          placementActive={placementActive}
+          editingNoteId={editingNoteId}
+          setEditingNoteId={setEditingNoteId}
+        />
       </View>
     </View>
   );
@@ -202,7 +232,7 @@ function NoteToolStrip({
       >
         <Image
           source={placementActive ? NOTE_TOGGLE_ACTIVE : NOTE_TOGGLE_INACTIVE}
-          style={styles.toggleIcon}
+          style={{ width: NOTE_TOGGLE_SIZE, height: NOTE_TOGGLE_SIZE }}
           accessibilityIgnoresInvertColors
         />
       </Pressable>
@@ -229,6 +259,356 @@ function NoteToolStrip({
   );
 }
 
+type CanvasProps = {
+  projectId: string;
+  notes: DiscoveryNote[];
+  setNotes: React.Dispatch<React.SetStateAction<DiscoveryNote[]>>;
+  clusters: DiscoveryCluster[];
+  setClusters: React.Dispatch<React.SetStateAction<DiscoveryCluster[]>>;
+  selectedColor: NoteColor;
+  placementActive: boolean;
+  editingNoteId: string | null;
+  setEditingNoteId: (id: string | null) => void;
+};
+
+// Pointer event shape used in onPointerDown/Move/Up. RN-web passes a
+// near-DOM PointerEvent shape that exposes clientX/Y/pointerId; the typings
+// for react-native's View don't include these handlers, so we cast.
+type AnyPointerEvent = {
+  clientX: number;
+  clientY: number;
+  pointerId: number;
+  preventDefault?: () => void;
+  target?: { setPointerCapture?: (id: number) => void; releasePointerCapture?: (id: number) => void };
+  currentTarget?: unknown;
+};
+
+function Canvas({
+  projectId,
+  notes,
+  setNotes,
+  clusters,
+  setClusters,
+  selectedColor,
+  placementActive,
+  editingNoteId,
+  setEditingNoteId,
+}: CanvasProps) {
+  const containerRef = useRef<View>(null);
+  const [pan, setPan] = useState<Position>({ x: 0, y: 0 });
+  const [ghostLocal, setGhostLocal] = useState<Position | null>(null);
+
+  // Pan gesture — ref so the live drag doesn't re-render on every move.
+  const panDragRef = useRef<{ startClient: Position; startPan: Position } | null>(null);
+
+  useEffect(() => {
+    if (!placementActive) setGhostLocal(null);
+  }, [placementActive]);
+
+  const getRect = (): { left: number; top: number } | null => {
+    const node = containerRef.current as unknown as { getBoundingClientRect?: () => DOMRect } | null;
+    const rect = node?.getBoundingClientRect?.();
+    return rect ? { left: rect.left, top: rect.top } : null;
+  };
+
+  const clientToLocal = (clientX: number, clientY: number): Position => {
+    const rect = getRect();
+    if (!rect) return { x: 0, y: 0 };
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const onBackdropPointerDown = (e: AnyPointerEvent) => {
+    // Only when the press starts on the canvas backdrop, not on a note.
+    if (e.target !== (e.currentTarget as unknown)) return;
+    if (placementActive) {
+      const local = clientToLocal(e.clientX, e.clientY);
+      const world: Position = {
+        x: local.x - pan.x - NOTE_SIZE / 2,
+        y: local.y - pan.y - NOTE_SIZE / 2,
+      };
+      const note = createNote({ projectId, position: world, color: selectedColor });
+      setNotes((prev) => [...prev, note]);
+      setEditingNoteId(note.id);
+      return;
+    }
+    // Start pan
+    panDragRef.current = {
+      startClient: { x: e.clientX, y: e.clientY },
+      startPan: { ...pan },
+    };
+    e.target?.setPointerCapture?.(e.pointerId);
+  };
+
+  const onBackdropPointerMove = (e: AnyPointerEvent) => {
+    if (panDragRef.current) {
+      const dx = e.clientX - panDragRef.current.startClient.x;
+      const dy = e.clientY - panDragRef.current.startClient.y;
+      setPan({
+        x: panDragRef.current.startPan.x + dx,
+        y: panDragRef.current.startPan.y + dy,
+      });
+      return;
+    }
+    if (placementActive) {
+      setGhostLocal(clientToLocal(e.clientX, e.clientY));
+    }
+  };
+
+  const onBackdropPointerUp = (e: AnyPointerEvent) => {
+    if (panDragRef.current) {
+      e.target?.releasePointerCapture?.(e.pointerId);
+      panDragRef.current = null;
+    }
+  };
+
+  const onBackdropPointerLeave = () => {
+    setGhostLocal(null);
+  };
+
+  const handleEndEdit = (note: DiscoveryNote, finalContent: string) => {
+    const updated = updateNoteContent(note, finalContent);
+    if (isNoteEmpty(updated)) {
+      const result = deleteNote(notes, clusters, note.id);
+      setNotes(result.notes);
+      setClusters(result.clusters);
+    } else {
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
+    }
+    setEditingNoteId(null);
+  };
+
+  const handleMove = (note: DiscoveryNote, newWorldPos: Position) => {
+    const updated = updateNotePosition(note, newWorldPos);
+    setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
+  };
+
+  const handleDelete = (note: DiscoveryNote) => {
+    const result = deleteNote(notes, clusters, note.id);
+    setNotes(result.notes);
+    setClusters(result.clusters);
+    if (editingNoteId === note.id) setEditingNoteId(null);
+  };
+
+  const cursor = placementActive ? 'crosshair' : 'grab';
+  // pointer + cursor are web-only props that aren't in RN's ViewProps/ViewStyle.
+  const webProps: Record<string, unknown> = {
+    onPointerDown: onBackdropPointerDown,
+    onPointerMove: onBackdropPointerMove,
+    onPointerUp: onBackdropPointerUp,
+    onPointerLeave: onBackdropPointerLeave,
+  };
+
+  return (
+    <View
+      ref={containerRef}
+      {...(webProps as object)}
+      style={[styles.canvas, { cursor } as object]}
+    >
+      <View
+        pointerEvents="box-none"
+        style={[
+          styles.canvasWorld,
+          { transform: [{ translateX: pan.x }, { translateY: pan.y }] },
+        ]}
+      >
+        {notes.map((note) => (
+          <DiscoveryNoteCard
+            key={note.id}
+            note={note}
+            editing={editingNoteId === note.id}
+            onStartEdit={() => setEditingNoteId(note.id)}
+            onEndEdit={(content) => handleEndEdit(note, content)}
+            onMove={(pos) => handleMove(note, pos)}
+            onDelete={() => handleDelete(note)}
+          />
+        ))}
+      </View>
+      {placementActive && ghostLocal && (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.ghostNote,
+            {
+              backgroundColor: NOTE_COLOR_HEX[selectedColor],
+              left: ghostLocal.x - NOTE_SIZE / 2,
+              top: ghostLocal.y - NOTE_SIZE / 2,
+            },
+          ]}
+        />
+      )}
+    </View>
+  );
+}
+
+type DiscoveryNoteCardProps = {
+  note: DiscoveryNote;
+  editing: boolean;
+  onStartEdit: () => void;
+  onEndEdit: (finalContent: string) => void;
+  onMove: (newPos: Position) => void;
+  onDelete: () => void;
+};
+
+function DiscoveryNoteCard({
+  note,
+  editing,
+  onStartEdit,
+  onEndEdit,
+  onMove,
+  onDelete,
+}: DiscoveryNoteCardProps) {
+  const [draft, setDraft] = useState(note.content);
+  const [hovered, setHovered] = useState(false);
+  const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{
+    startClient: Position;
+    startedAt: number;
+    moved: boolean;
+  } | null>(null);
+  const inputRef = useRef<TextInput>(null);
+
+  // Reset draft if the underlying note id changes (e.g. delete + recreate).
+  useEffect(() => {
+    setDraft(note.content);
+  }, [note.id, note.content]);
+
+  // Autofocus on entering edit mode.
+  useEffect(() => {
+    if (editing) {
+      const id = setTimeout(() => inputRef.current?.focus(), 0);
+      return () => clearTimeout(id);
+    }
+    return undefined;
+  }, [editing]);
+
+  const onPointerDown = (e: AnyPointerEvent) => {
+    if (editing) return; // typing — never drag
+    dragRef.current = {
+      startClient: { x: e.clientX, y: e.clientY },
+      startedAt: Date.now(),
+      moved: false,
+    };
+    e.target?.setPointerCapture?.(e.pointerId);
+  };
+
+  const onPointerMove = (e: AnyPointerEvent) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const dx = e.clientX - drag.startClient.x;
+    const dy = e.clientY - drag.startClient.y;
+    if (!drag.moved) {
+      const overTime = Date.now() - drag.startedAt >= DRAG_MS_THRESHOLD;
+      const overDist = Math.hypot(dx, dy) >= DRAG_PX_THRESHOLD;
+      if (overTime || overDist) {
+        drag.moved = true;
+        setIsDragging(true);
+      }
+    }
+    if (drag.moved) {
+      setDragOffset({ x: dx, y: dy });
+    }
+  };
+
+  const onPointerUp = (e: AnyPointerEvent) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    e.target?.releasePointerCapture?.(e.pointerId);
+    if (drag.moved) {
+      onMove({
+        x: note.position.x + dragOffset.x,
+        y: note.position.y + dragOffset.y,
+      });
+    } else {
+      onStartEdit();
+    }
+    dragRef.current = null;
+    setIsDragging(false);
+    setDragOffset({ x: 0, y: 0 });
+  };
+
+  const onPointerCancel = () => {
+    dragRef.current = null;
+    setIsDragging(false);
+    setDragOffset({ x: 0, y: 0 });
+  };
+
+  const finishEdit = () => onEndEdit(draft);
+
+  const onInputKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    const key = e.nativeEvent.key;
+    if (key === 'Enter') {
+      const native = e.nativeEvent as TextInputKeyPressEventData & { shiftKey?: boolean };
+      if (!native.shiftKey) {
+        e.preventDefault?.();
+        finishEdit();
+      }
+    } else if (key === 'Escape') {
+      e.preventDefault?.();
+      finishEdit();
+    }
+  };
+
+  const renderedLeft = note.position.x + (isDragging ? dragOffset.x : 0);
+  const renderedTop = note.position.y + (isDragging ? dragOffset.y : 0);
+  const showDelete = hovered && !editing && !isDragging;
+
+  const webProps: Record<string, unknown> = {
+    onMouseEnter: () => setHovered(true),
+    onMouseLeave: () => setHovered(false),
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+  };
+
+  return (
+    <View
+      {...(webProps as object)}
+      style={[
+        styles.note,
+        {
+          backgroundColor: NOTE_COLOR_HEX[note.color],
+          left: renderedLeft,
+          top: renderedTop,
+        },
+        isDragging && styles.noteDragging,
+      ]}
+    >
+      {editing ? (
+        <TextInput
+          ref={inputRef}
+          value={draft}
+          onChangeText={setDraft}
+          onKeyPress={onInputKeyPress}
+          onBlur={finishEdit}
+          style={styles.noteInput}
+          multiline
+          textAlignVertical="top"
+        />
+      ) : (
+        <Text style={styles.noteText} numberOfLines={6}>
+          {note.content}
+        </Text>
+      )}
+      {showDelete && (
+        <Pressable
+          accessibilityLabel="Delete note"
+          onPress={onDelete}
+          // Pointer-down on the × must not start a drag on the parent.
+          {...({
+            onPointerDown: (e: { stopPropagation?: () => void }) =>
+              e.stopPropagation?.(),
+          } as object)}
+          style={styles.noteDelete}
+        >
+          <Text style={styles.noteDeleteX}>×</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -248,7 +628,7 @@ const styles = StyleSheet.create({
     width: CHAT_PANEL_LEFT_PAD + CHAT_PANEL_WIDTH - HEADER_LEFT_PAD,
   },
   phaseNumber: {
-    fontFamily: 'NoticiaText_400Regular',
+    fontFamily: 'Domine_400Regular',
     fontSize: 36,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -262,7 +642,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     flex: 1,
-    fontFamily: 'NoticiaText_700Bold',
+    fontFamily: 'Domine_700Bold',
     fontSize: 20,
     color: TEXT_MUTED,
     includeFontPadding: false,
@@ -278,7 +658,7 @@ const styles = StyleSheet.create({
     marginLeft: 24,
   },
   avatarText: {
-    fontFamily: 'NoticiaText_400Regular_Italic',
+    fontFamily: 'Domine_400Regular',
     fontSize: 14,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -298,7 +678,7 @@ const styles = StyleSheet.create({
     padding: CHAT_PANEL_INNER_PAD,
   },
   chatLabel: {
-    fontFamily: 'NoticiaText_400Regular',
+    fontFamily: 'Domine_400Regular',
     fontSize: 16,
     color: TEXT_SECONDARY,
     includeFontPadding: false,
@@ -323,13 +703,13 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   bubbleTextAi: {
-    fontFamily: 'NoticiaText_700Bold',
+    fontFamily: 'Domine_700Bold',
     fontSize: 16,
     color: TEXT_SECONDARY,
     includeFontPadding: false,
   },
   bubbleTextUser: {
-    fontFamily: 'NoticiaText_400Regular',
+    fontFamily: 'Domine_400Regular',
     fontSize: 16,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -345,7 +725,7 @@ const styles = StyleSheet.create({
   },
   chatInput: {
     flex: 1,
-    fontFamily: 'NoticiaText_400Regular',
+    fontFamily: 'Domine_400Regular',
     fontSize: 14,
     color: TEXT_DARK,
     includeFontPadding: false,
@@ -388,10 +768,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: TOGGLE_TO_SWATCH_GAP,
   },
-  toggleIcon: {
-    width: NOTE_TOGGLE_SIZE,
-    height: NOTE_TOGGLE_SIZE,
-  },
   swatchColumn: {
     alignItems: 'center',
   },
@@ -423,5 +799,76 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     borderLeftWidth: 1,
     borderLeftColor: SURFACE_ALT,
+    overflow: 'hidden',
+    position: 'relative',
+    userSelect: 'none',
+  },
+  canvasWorld: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  note: {
+    position: 'absolute',
+    width: NOTE_SIZE,
+    height: NOTE_SIZE,
+    borderRadius: NOTE_RADIUS,
+    padding: NOTE_PAD,
+    cursor: 'pointer',
+  },
+  noteDragging: {
+    transform: [{ scale: 1.02 }],
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    zIndex: 10,
+  },
+  noteText: {
+    fontFamily: 'Domine_400Regular',
+    fontSize: NOTE_FONT_SIZE,
+    color: TEXT_DARK,
+    includeFontPadding: false,
+    lineHeight: 18,
+  },
+  noteInput: {
+    flex: 1,
+    fontFamily: 'Domine_400Regular',
+    fontSize: NOTE_FONT_SIZE,
+    color: TEXT_DARK,
+    includeFontPadding: false,
+    lineHeight: 18,
+    padding: 0,
+    margin: 0,
+    outlineStyle: 'none',
+  },
+  noteDelete: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: DELETE_BUTTON_SIZE,
+    height: DELETE_BUTTON_SIZE,
+    borderRadius: DELETE_BUTTON_SIZE / 2,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteDeleteX: {
+    color: WHITE,
+    fontSize: 14,
+    lineHeight: 14,
+    includeFontPadding: false,
+    fontFamily: 'Domine_400Regular',
+  },
+  ghostNote: {
+    position: 'absolute',
+    width: NOTE_SIZE,
+    height: NOTE_SIZE,
+    borderRadius: NOTE_RADIUS,
+    opacity: GHOST_OPACITY,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.25)',
   },
 });
