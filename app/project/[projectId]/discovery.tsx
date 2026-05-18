@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import {
+  Image,
   NativeSyntheticEvent,
   Pressable,
   ScrollView,
@@ -10,6 +11,15 @@ import {
   TextInputKeyPressEventData,
   View,
 } from 'react-native';
+
+const NOTE_TOGGLE_ACTIVE = require('../../../assets/buttons/button_note_active.svg');
+const NOTE_TOGGLE_INACTIVE = require('../../../assets/buttons/button_note_inactive.svg');
+import {
+  DEFAULT_NOTE_COLOR,
+  NOTE_COLOR_HEX,
+  NOTE_COLOR_ORDER,
+} from '../../../src/models/noteColors';
+import type { NoteColor } from '../../../src/models/types';
 
 // Tokens — Spec_Discovery_Design.md §3, §7
 const TEXT_DARK = '#1A1A1A';
@@ -32,6 +42,16 @@ const CHAT_PANEL_INNER_PAD = 20;
 const CHAT_INPUT_HEIGHT = 198;
 const SEND_BUTTON_SIZE = 26;
 
+// Note tool strip — Spec_Discovery_Design.md §3.3
+const TOOL_STRIP_WIDTH = 32;
+const TOOL_STRIP_GUTTER = 28;
+const SWATCH_SIZE = 32;
+const SWATCH_RADIUS = 2;
+const SWATCH_GAP = 12;
+const NOTE_TOGGLE_SIZE = 26;
+const TOGGLE_TO_SWATCH_GAP = 18;
+const SWATCH_RING_INSET = 4;
+
 type ChatMessage = {
   id: string;
   role: 'assistant' | 'user';
@@ -46,12 +66,20 @@ export default function DiscoveryRoute() {
   // projectId reserved for note CRUD wiring in Phase 4
   useLocalSearchParams<{ projectId: string }>();
 
+  const [selectedColor, setSelectedColor] = useState<NoteColor>(DEFAULT_NOTE_COLOR);
+  const [placementActive, setPlacementActive] = useState(false);
+
   return (
     <View style={styles.container}>
       <PhaseHeader />
       <View style={styles.contentRow}>
         <ChatPanel />
-        <View style={styles.divider} />
+        <NoteToolStrip
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
+          placementActive={placementActive}
+          onTogglePlacement={() => setPlacementActive((v) => !v)}
+        />
         <View style={styles.canvas} />
       </View>
     </View>
@@ -145,6 +173,58 @@ function ChatPanel() {
           <Text style={styles.sendArrow}>↑</Text>
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+type NoteToolStripProps = {
+  selectedColor: NoteColor;
+  onSelectColor: (color: NoteColor) => void;
+  placementActive: boolean;
+  onTogglePlacement: () => void;
+};
+
+function NoteToolStrip({
+  selectedColor,
+  onSelectColor,
+  placementActive,
+  onTogglePlacement,
+}: NoteToolStripProps) {
+  return (
+    <View style={styles.toolStrip}>
+      <Pressable
+        accessibilityLabel={
+          placementActive ? 'Close note placement' : 'Open note placement'
+        }
+        accessibilityState={{ selected: placementActive }}
+        onPress={onTogglePlacement}
+        style={styles.toggleButton}
+      >
+        <Image
+          source={placementActive ? NOTE_TOGGLE_ACTIVE : NOTE_TOGGLE_INACTIVE}
+          style={styles.toggleIcon}
+          accessibilityIgnoresInvertColors
+        />
+      </Pressable>
+      {placementActive && (
+        <View style={styles.swatchColumn}>
+          {NOTE_COLOR_ORDER.map((color) => {
+            const selected = color === selectedColor;
+            return (
+              <Pressable
+                key={color}
+                accessibilityLabel={`Select ${color.toLowerCase()} note color`}
+                accessibilityState={{ selected }}
+                onPress={() => onSelectColor(color)}
+                style={styles.swatchWrapper}
+              >
+                <View style={[styles.swatch, { backgroundColor: NOTE_COLOR_HEX[color] }]} />
+                {selected && <View style={styles.swatchRing} pointerEvents="none" />}
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
@@ -295,13 +375,53 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     includeFontPadding: false,
   },
-  divider: {
-    width: 1,
-    backgroundColor: SURFACE_ALT,
-    marginHorizontal: 31,
+  toolStrip: {
+    width: TOOL_STRIP_WIDTH,
+    marginHorizontal: TOOL_STRIP_GUTTER,
+    alignItems: 'center',
+    paddingTop: 4,
+  },
+  toggleButton: {
+    width: NOTE_TOGGLE_SIZE,
+    height: NOTE_TOGGLE_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: TOGGLE_TO_SWATCH_GAP,
+  },
+  toggleIcon: {
+    width: NOTE_TOGGLE_SIZE,
+    height: NOTE_TOGGLE_SIZE,
+  },
+  swatchColumn: {
+    alignItems: 'center',
+  },
+  swatchWrapper: {
+    width: SWATCH_SIZE,
+    height: SWATCH_SIZE,
+    marginBottom: SWATCH_GAP,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatch: {
+    width: SWATCH_SIZE,
+    height: SWATCH_SIZE,
+    borderRadius: SWATCH_RADIUS,
+  },
+  swatchRing: {
+    position: 'absolute',
+    top: -SWATCH_RING_INSET,
+    left: -SWATCH_RING_INSET,
+    right: -SWATCH_RING_INSET,
+    bottom: -SWATCH_RING_INSET,
+    borderWidth: 1.5,
+    borderColor: TEXT_DARK,
+    borderRadius: SWATCH_RADIUS + 2,
   },
   canvas: {
     flex: 1,
     backgroundColor: WHITE,
+    borderLeftWidth: 1,
+    borderLeftColor: SURFACE_ALT,
   },
 });
