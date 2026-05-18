@@ -339,7 +339,7 @@ How the project's visual language (from HARD_RULES.md) applies
 to this specific surface. Don't repeat the rules — reference them
 and note any surface-specific details:
 
-- Which fonts are used where (Barlow for X, Noto Serif for Y)
+- Which fonts are used where (Barlow for X, Domine for Y)
 - Corner radius choices within the 4px–12px range
 - Any surface-specific spacing or layout patterns
 - Card styling details relevant to this surface
@@ -441,7 +441,7 @@ This section varies by unit type:
 - Layout description (what goes where, responsive behavior)
 - Content displayed (with specifics — not "shows data" but
   "shows the Concept Type label in Barlow 16pt and the value
-  in Noto Serif 14pt")
+  in Domine 14pt")
 - Navigation (what navigates here, what navigates away)
 - All states: empty, loading, populated, error
 

@@ -288,7 +288,7 @@ The workspace displays Concept cards that the user can rearrange freely.
 - Rounded corners: 4px to 12px range
 - Background: white
 - Surface: light gray accents
-- Typography: Barlow (headings/labels) + Noto Serif (body/descriptions)
+- Typography: Barlow (headings/labels) + Domine (body/descriptions)
 - Type size: minimum 12pt, maximum 36pt
 
 **Phase behavior:** No cards during Discovery. Cards emerge during Development. Cards are the primary surface during Refinement.
@@ -340,7 +340,7 @@ Tracks which phase the project is currently in and what state that phase is in (
 
 6. **Export is a first-class citizen.** The system is designed from day one to produce output that other tools can consume. Internal data structures should map cleanly to external formats.
 
-7. **Minimal, warm, editorial UI.** White and light gray palette. Barlow + Noto Serif. Rounded corners. The tool should feel like a sketchbook, not a spreadsheet.
+7. **Minimal, warm, editorial UI.** White and light gray palette. Barlow + Domine. Rounded corners. The tool should feel like a sketchbook, not a spreadsheet.
 
 ---
 
@@ -363,7 +363,7 @@ Tracks which phase the project is currently in and what state that phase is in (
 | Color Palette | White (#FFFFFF), Light Gray (#F5F5F5, #E8E8E8), Dark text (#1A1A1A) |
 | Corner Radius | 4px – 12px range |
 | Heading Font | Barlow (Google Fonts) |
-| Body Font | Noto Serif (Google Fonts) |
+| Body Font | Domine (Google Fonts) |
 | Minimum Type Size | 12pt |
 | Maximum Type Size | 36pt |
 | Layout Pattern | Unified workspace: chat panel + phase-adaptive canvas/card surface |

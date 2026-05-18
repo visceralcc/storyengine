@@ -178,7 +178,7 @@ When the user returns to the Step Menu from a phase, it may be helpful to indica
 
 - A small dot or marker next to the current phase number
 - The current phase name rendered in a slightly bolder weight (Barlow Light instead of Barlow Thin)
-- The italic annotation pattern from the Project Chooser — e.g., the current phase could show a brief italic label like *"in progress"* or *"current"* in Noticia Text Bold Italic
+- The italic annotation pattern from the Project Chooser — e.g., the current phase could show a brief italic label like *"in progress"* or *"current"* in Domine Bold Italic
 
 This is a nice-to-have, not a requirement for v1. The Step Menu works without it — the user generally knows which phase they're in. If implemented, the treatment should be very subtle — a whisper, not a shout.
 
@@ -213,9 +213,9 @@ The Step Menu is a lightweight read — it checks the project's phase state to d
 |---------|------|--------|------|-------------------|----------------|
 | Phase number | Barlow | Thin (100) | 96pt | `#1A1A1A` | `#999999` |
 | Phase name | Barlow | Thin (100) | 96pt | `#1A1A1A` | `#999999` |
-| Current phase indicator (optional) | Noticia Text | Bold Italic | 24pt | `#1A1A1A` | N/A |
+| Current phase indicator (optional) | Domine | Bold Italic | 24pt | `#1A1A1A` | N/A |
 
-**Font rule for this surface:** Only Barlow appears on this screen in its default state (no Noticia Text unless the optional current-phase indicator is implemented). This is a purely structural, navigational surface — no content, no descriptions, no body text.
+**Font rule for this surface:** Only Barlow appears on this screen in its default state (no Domine unless the optional current-phase indicator is implemented). This is a purely structural, navigational surface — no content, no descriptions, no body text.
 
 **Size exception:** The 96pt phase text exceeds the HARD_RULES 36pt maximum. This is an intentional exception consistent with the Splash screen's 260pt title and the Project Chooser's 40pt labels — the entry flow screens use display-scale typography throughout. This exception applies only to the entry flow.
 

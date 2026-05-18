@@ -224,9 +224,9 @@ This is the recommended order for writing Level 2 specs. It follows the dependen
 
 | Order | Spec | Status | Rationale |
 |-------|------|--------|-----------|
-| 1 | `Spec_DataModel.md` | 🔴 Needs v0.3 revision | Every other spec references these entities. Must add Discovery Note, Phase State, Conflict dimension defaults, rename Builder → Dimension. |
-| 2 | `Spec_DataPersistence.md` | 🟡 Needs minor revision | Resolves PRD Open Question #3 (project file format). Add Discovery Notes and Phase State persistence. |
-| 3 | `Spec_Navigation.md` | 🔴 Needs v0.3 revision | Routing + phase transitions. Builder switching replaced by phase movement and dimension tracking in unified workspace. |
+| 1 | `Spec_DataModel.md` | ✅ v0.2 complete (NoteColor + GapAnalysis additions pending v0.3 rollup) | Every other spec references these entities. Adds Discovery Note, Phase State, Conflict dimension defaults, renames Builder → Dimension. |
+| 2 | `Spec_DataPersistence.md` | ✅ v0.2 complete | Resolves PRD Open Question #3 (project file format). Discovery Notes and Phase State persistence covered. |
+| 3 | `Spec_Navigation.md` | ✅ v0.2 complete (needs v0.3 revision for split entry flow — Splash → Chooser → Step Menu) | Routing + phase transitions. Builder switching replaced by phase movement and dimension tracking in unified workspace. |
 
 ### Phase B — Discovery (write second)
 
@@ -245,7 +245,9 @@ This is the recommended order for writing Level 2 specs. It follows the dependen
 
 | Order | Spec | Rationale |
 |-------|------|-----------|
-| 7 | `Spec_StartScreen_Design.md` | The simplest screen. Two options. Good warm-up for using the Design Spec template. |
+| 7 | `Spec_SplashScreen_Design.md` ✅ v0.1 | First of the entry-flow trio. Full-bleed video + centered title; tap-anywhere-to-continue. |
+| 7b | `Spec_ProjectChooser_Design.md` ✅ v0.1 | Second of the entry-flow trio. Two rows ("Open existing Story" / "Start New Story") with italic annotations. |
+| 7c | `Spec_StepMenu_Design.md` ✅ v0.1 | Third of the entry-flow trio. Three phase rows (Discovery / Development / Refinement) with sequential locking. |
 | 8 | `Spec_Workspace_Design.md` | The most complex surface — unified workspace covering both Development and Refinement phases. Chat panel, card dashboard, dimension tracking, phase-adaptive card behavior. Write after the Chat Engine spec so you know what the chat panel needs to display. |
 
 ### Phase E — Enrichment (write fifth)

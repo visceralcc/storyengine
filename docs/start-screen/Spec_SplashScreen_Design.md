@@ -153,7 +153,7 @@ The Splash screen is entirely self-contained. It has no data dependencies whatso
 | Product title (video playing) | Barlow | Thin (100) | 260pt | `#FFFFFF` |
 | Product title (video loading) | Barlow | Thin (100) | 260pt | `#1A1A1A` |
 
-**Font rule for this surface:** Only one font (Barlow) appears on this screen. Noticia Text is not used — there is no body text, no labels, no metadata. This is a pure display surface.
+**Font rule for this surface:** Only one font (Barlow) appears on this screen. Domine is not used — there is no body text, no labels, no metadata. This is a pure display surface.
 
 **Size exception:** The 260pt title size exceeds the HARD_RULES maximum of 36pt. This is an intentional exception for the Splash screen's display treatment — the product name is functioning as a cinematic title card, not as a heading within a content layout. This exception applies only to this screen. The Discovery canvas already established precedent for exceptions (pill button radius, circular avatar).
 
@@ -250,7 +250,7 @@ Spec file: docs/start-screen/Spec_SplashScreen_Design.md
 Also read before starting:
 - docs/HARD_RULES.md (non-negotiable constraints)
 - docs/design/DESIGN.md (design system tokens — note: body font is
-  now Noticia Text, pending update)
+  now Domine, pending update)
 - docs/foundation/Spec_Navigation.md (route context — Splash lives
   at the root route `/`)
 

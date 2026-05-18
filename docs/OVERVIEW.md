@@ -111,8 +111,8 @@ This project follows the **Ideas-to-Code** process. Documents are organized by l
 
 ## Current Status
 
-**Phase:** Speccing (pre-implementation). See `BUILD_STATUS.md` for detailed progress.
+**Phase:** Implementing. See `BUILD_STATUS.md` for detailed progress.
 
-**Completed:** PRD v0.3, companion documents, templates, structure map v0.2. Three Phase A foundation specs exist but need revision for the pipeline model.
+**Completed:** PRD v0.3, companion documents, templates, structure map v0.2, foundation specs (DataModel, DataPersistence, Navigation), Discovery specs (Engine + Design), and entry-flow design specs (Splash, Project Chooser, Step Menu). Code-side: project scaffolded (Expo SDK 52 + TypeScript + Jest), DataModel/DataPersistence/Discovery Engine Phase 1 implementations passing 51 tests, full entry-flow UI shipped, Discovery Screen UI shell complete end-to-end (Phases 1–6) with the consolidation engine still stubbed.
 
-**Next:** Revise the three foundation specs for v0.3, then write the Discovery specs (Phase B).
+**Next:** Wire the Discovery UI to real persistence and AI — write `Spec_ChatEngine.md`, implement Discovery Engine Phases 2–5 (consolidation, gap analysis, re-consolidation), and DataPersistence Phase 2 (project lifecycle / save-to-disk).

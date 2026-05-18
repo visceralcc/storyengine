@@ -21,7 +21,7 @@ Non-negotiable constraints that apply across all specs and all implementation. C
 | Color palette | White (#FFFFFF), Light Gray (#F5F5F5, #E8E8E8), Dark text (#1A1A1A) |
 | Corner radius | Minimum 4px, maximum 12px — no sharp corners, no circles |
 | Heading font | Barlow (Google Fonts) |
-| Body font | Noto Serif (Google Fonts) |
+| Body font | Domine (Google Fonts slab serif) |
 | Minimum type size | 12pt — nothing smaller, ever |
 | Maximum type size | 36pt — nothing larger, ever |
 | Overall feel | Clean, editorial, sketchbook-like — not a spreadsheet, not a dashboard tool |

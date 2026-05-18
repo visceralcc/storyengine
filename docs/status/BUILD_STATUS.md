@@ -101,9 +101,7 @@ The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMappin
 
 ## Companion Doc Updates Pending
 
-The body font change from Noto Serif to Noticia Text (decided in Discovery_Design v0.1) needs to be applied to:
-- `HARD_RULES.md` — Visual Language table, body font row
-- `DESIGN.md` — Typography section, all "Noto Serif" references → "Noticia Text"
+_None._ Body font Noto Serif → Domine (final, after a Noticia Text waystation) has been propagated across HARD_RULES.md, DESIGN.md, Spec_Story_Engine_PRD.md, Templates_SpecDocs.md, Spec_Discovery_Design.md, Spec_SplashScreen_Design.md, Spec_ProjectChooser_Design.md, and Spec_StepMenu_Design.md. Italic styling falls back to upright Domine in v1 (Domine ships without italic variants — see DESIGN.md and ProjectChooser §7 for the explicit note).
 
 ---
 
@@ -150,7 +148,7 @@ The body font change from Noto Serif to Noticia Text (decided in Discovery_Desig
 | **Entry Flow UI** | **Splash Screen** | **✅ Complete** | **`app/index.tsx`** |
 | **Entry Flow UI** | **Project Chooser** | **✅ Complete** | **`app/choose.tsx`** |
 | **Entry Flow UI** | **Step Menu** | **✅ Complete** | **`app/project/[projectId]/steps.tsx`** |
-| **Entry Flow UI** | **Font loading** | **✅ Complete** | **`app/_layout.tsx` (Barlow_100Thin, NoticiaText_700Bold_Italic)** |
+| **Entry Flow UI** | **Font loading** | **✅ Complete** | **`app/_layout.tsx` (Barlow_100Thin, Barlow_500Medium, Domine_400Regular, Domine_700Bold)** |
 | **Entry Flow UI** | **Real project IDs** | **✅ Complete** | **`app/choose.tsx` uses initializeProject** |
 | **Discovery UI** | **Data model additions (NoteColor)** | **✅ Complete** | **`src/models/types.ts`, `src/models/noteColors.ts`, `src/models/factories.ts`** |
 | **Discovery UI** | **Phase 1 — Screen shell + header** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
@@ -171,6 +169,6 @@ Tests: 51 passing (20 model, 16 canvas, 15 persistence).
 - Discovery Engine Phases 2–5 — consolidation, gap analysis, re-consolidation
 - DataPersistence Phase 2 — project lifecycle so projects (and Discovery notes) actually save to disk
 
-**Companion doc updates still pending:** HARD_RULES.md and DESIGN.md need body font updated from Noto Serif to Noticia Text. DataModel needs v0.3 revision for NoteColor type and GapAnalysis interfaces.
+**Companion doc updates still pending:** DataModel needs v0.3 revision to roll up the in-code NoteColor type and the GapAnalysis interfaces from Discovery_Design v0.1 / DiscoveryEngine v0.1.
 
 **Navigation spec update needed:** `Spec_Navigation.md` (v0.2) defines `/` as a single "Start Screen" route. The entry flow is now three screens (Splash → Project Chooser → Step Menu) at routes `/`, `/choose`, and `/project/:projectId/steps`. The nav spec needs a v0.3 revision to reflect these routes.

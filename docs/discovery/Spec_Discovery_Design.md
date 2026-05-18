@@ -60,27 +60,27 @@ The Discovery canvas is the first creative surface the user encounters after cre
 The top bar spans the full screen width and establishes context.
 
 **Always visible:**
-- Phase number: "1" — displayed in Noticia Text Regular 36pt, dark text (`#1A1A1A`), left-aligned at approximately x=82
+- Phase number: "1" — displayed in Domine Regular 36pt, dark text (`#1A1A1A`), left-aligned at approximately x=82
 - Phase name: "Discovery" — displayed in Barlow Thin 36pt, dark text, positioned to the right of the phase number with generous spacing (approximately 72px gap)
-- Subtitle guidance: "Get every idea out of your head and onto the canvas...structure comes later." — displayed in Noticia Text Bold 20pt, secondary text color (`#AFAFAF`), positioned to the right of the divider line between chat panel and canvas. This text is read-only.
+- Subtitle guidance: "Get every idea out of your head and onto the canvas...structure comes later." — displayed in Domine Bold 20pt, secondary text color (`#AFAFAF`), positioned to the right of the divider line between chat panel and canvas. This text is read-only.
 
 **Top-right corner:**
-- User avatar: a 30px circle with the user's initials in Noticia Text Italic 14pt. Background is Surface Alt (`#E8E8E8`). This is a placeholder for future user/settings functionality — not interactive in v1 beyond visual presence.
+- User avatar: a 30px circle with the user's initials in Domine Italic 14pt. Background is Surface Alt (`#E8E8E8`). This is a placeholder for future user/settings functionality — not interactive in v1 beyond visual presence.
 
 ### 3.2 Chat Panel
 
 The chat panel occupies the left side of the screen, approximately 309px wide, with a Surface background (`#F5F5F5`), rounded corners (10px), and runs the full height of the content area below the phase header.
 
 **Information hierarchy (top to bottom):**
-1. **Panel label:** "Assistant" — Noticia Text Regular 16pt, secondary text color (`#636363`). Top-left of the panel.
-2. **Chat message area:** Scrollable region displaying the conversation. AI messages appear left-aligned, user messages appear right-aligned (or with distinct styling — see §7). Initial state shows a single AI message: "How can I help?" in Noticia Text Bold 16pt, secondary text color.
+1. **Panel label:** "Assistant" — Domine Regular 16pt, secondary text color (`#636363`). Top-left of the panel.
+2. **Chat message area:** Scrollable region displaying the conversation. AI messages appear left-aligned, user messages appear right-aligned (or with distinct styling — see §7). Initial state shows a single AI message: "How can I help?" in Domine Bold 16pt, secondary text color.
 3. **Text input area:** White background (`#FFFFFF`), rounded corners (10px), positioned at the bottom of the panel. Contains a text field for user input and a circular send button (26px diameter, `#656363` border, 13px radius, with an arrow icon inside). The input area has generous height (approximately 198px) to invite longer-form stream-of-consciousness input.
 
 **Panel label is fixed (does not scroll).** The chat message area scrolls independently. The text input area is anchored to the bottom.
 
 ### 3.3 Note Color Picker
 
-A vertical strip of 6 color swatches positioned between the chat panel and the canvas, rotated 90° to sit along the divider line. Each swatch is a 32×32px square with 2px corner radius.
+A vertical strip of 6 color swatches positioned between the chat panel and the canvas, stacked along the gutter. Each swatch is a 32×32px square with 2px corner radius. The strip is **hidden by default** — it appears only when placement mode is active (see "Note placement toggle" below).
 
 **Color palette (top to bottom):**
 
@@ -93,11 +93,23 @@ A vertical strip of 6 color swatches positioned between the chat panel and the c
 | 5 | Pink | `#F5A0A0` | `PINK` |
 | 6 | Gray | `#B4B4B4` | `GRAY` |
 
+**Note placement toggle:**
+
+A 26×26px circular toggle button sits above the swatch column. It is the **single entry/exit point for placement mode** — there is no separate "Add Note" affordance. The toggle uses the design-supplied SVG assets:
+
+| State | Asset | Visual |
+|-------|-------|--------|
+| Inactive | `assets/buttons/button_note_inactive.svg` | White circle, outline document icon |
+| Active | `assets/buttons/button_note_active.svg` | Gray circle, filled document icon |
+
 **Behavior:**
-- The currently selected color is indicated by a subtle visual marker (e.g., a darker border or checkmark overlay). Default selection on screen load: Blue.
-- Tapping a swatch selects that color. The next note created (manually or via AI extraction) uses the selected color.
-- The color picker is always visible during the pre-consolidation state. It may be hidden or deprioritized post-consolidation (see §5.3).
-- A small note icon sits above the color swatches, acting as the "Add Note" button. Tapping it activates placement mode (see §4.1).
+- On screen load, the toggle is **inactive**, swatches are **hidden**, and the canvas is in pan mode.
+- Tapping the toggle → switches to the active asset, reveals the 6 swatches, and enters placement mode (cursor becomes a crosshair, ghost preview follows the pointer over the canvas).
+- Tapping a swatch selects that color. Selection is indicated by a thin dark ring inset 4px around the swatch (the swatch's 32×32 footprint stays constant). Default selection on first reveal: Blue.
+- While placement mode is active, the user can place multiple notes in succession — the swatches stay open and the toggle stays active after each placement.
+- Tapping the toggle again → switches to the inactive asset, hides the swatches, and exits placement mode (canvas returns to pan mode).
+- The next note created (manually or via AI extraction) uses the currently selected color.
+- Color picker visibility is purely controlled by the toggle. Post-consolidation, the toggle continues to gate visibility (see §5.3).
 
 ### 3.4 Canvas
 
@@ -111,7 +123,7 @@ The canvas occupies all remaining horizontal space to the right of the chat pane
 
 ### 3.5 Consolidate Ideas Button
 
-Positioned below the chat panel, full width of the chat panel (309px), horizontally centered. Pill-shaped (71px border radius), with a gray background (`#D2D2D2`), a subtle border (`#B8B8B8`), and "Consolidate Ideas" text in Noticia Text Regular 16pt, dark text.
+Positioned below the chat panel, full width of the chat panel (309px), horizontally centered. Pill-shaped (71px border radius), with a gray background (`#D2D2D2`), a subtle border (`#B8B8B8`), and "Consolidate Ideas" text in Domine Regular 16pt, dark text.
 
 **Always visible** at the bottom-left of the screen, below the chat panel. Its state changes based on note count (see §5).
 
@@ -121,13 +133,14 @@ Positioned below the chat panel, full width of the chat panel (309px), horizonta
 
 ### 4.1 Manual Note Placement
 
-1. User taps the note icon above the color picker (or a keyboard shortcut, if defined later)
-2. Canvas enters **placement mode**: a ghost preview (semi-transparent note outline in the selected color) follows the cursor/pointer on the canvas
+1. User taps the note placement toggle (see §3.3) (or a keyboard shortcut, if defined later)
+2. Canvas enters **placement mode**: the swatches reveal, the cursor becomes a crosshair, and a ghost preview (semi-transparent note outline in the selected color) follows the pointer on the canvas
 3. User taps/clicks a location on the canvas
-4. A note is created at that position in the selected color and immediately enters **edit mode** (text cursor active, keyboard ready)
+4. A note is created at that position in the selected color and immediately enters **edit mode** (text cursor active, keyboard ready). Placement mode remains active — swatches stay open and the toggle stays in the active state for successive placements.
 5. User types note content
 6. Editing ends when the user taps outside the note, presses Escape, or presses Enter
 7. If the note has no content on edit-end, it is automatically deleted (see `Spec_DiscoveryEngine.md` §3.1)
+8. To exit placement mode, the user taps the toggle again (swatches hide, cursor returns to pan)
 
 ### 4.2 Note Interaction
 
@@ -175,7 +188,7 @@ The user has just created a project and landed on Discovery for the first time.
 
 - **Canvas:** Empty white space. No notes visible.
 - **Chat panel:** Shows a single AI message: "How can I help?" This invites the user to start brainstorming.
-- **Color picker:** Visible, Blue selected by default.
+- **Note placement toggle:** Inactive (white circle, outline document icon). Swatches are hidden. Blue is the default selected color once the toggle is activated.
 - **Consolidate Ideas button:** Disabled (grayed out, non-interactive). No tooltip in v1 — the disabled state is self-explanatory once the user has added notes and sees it activate.
 - **Phase header:** Fully rendered with phase number, name, and subtitle.
 
@@ -185,7 +198,7 @@ The user has placed one or more notes. This is the primary working state.
 
 - **Canvas:** Notes visible at their placed positions. Notes in various colors based on user selection.
 - **Chat panel:** Shows conversation history. New messages append at the bottom.
-- **Color picker:** Visible, reflecting current selection.
+- **Note placement toggle:** State reflects whether the user is currently placing notes (active, swatches open) or panning the canvas (inactive, swatches hidden).
 - **Consolidate Ideas button:** Disabled if fewer than 3 notes exist. Enabled (full contrast, interactive) when 3 or more notes exist. When disabled and tapped, show a brief message below the button: "Add a few more ideas first — you need at least 3 notes." Message fades after 3 seconds.
 
 ### 5.3 Consolidation Loading
@@ -203,7 +216,7 @@ Consolidation is complete. Notes have been rearranged into cluster groups.
 
 - **Canvas:** Notes are arranged inside labeled cluster border boxes (see §6 for visual details). Clusters are positioned using the layout algorithm from `Spec_DiscoveryEngine.md` §4.4. The viewport auto-pans to show the clusters.
 - **Chat panel:** The AI posts a consolidation summary message in the chat, e.g.: "I've grouped your ideas into [N] themes. Take a look — you can drag notes between groups or rename the labels." The chat remains active for further brainstorming.
-- **Color picker:** Remains visible. New notes can still be placed on the canvas in any color (they appear outside cluster borders, unclustered).
+- **Note placement toggle:** Remains visible at all times. New notes can still be placed on the canvas in any color via the toggle + swatches flow (they appear outside cluster borders, unclustered).
 - **Consolidate Ideas button:** Label changes to "Re-Consolidate" to indicate that tapping again will re-run consolidation on all notes (including any new ones). Behavior per `Spec_DiscoveryEngine.md` §4.6.
 - **Navigation affordance:** A new element appears (position TBD — likely near the Consolidate button or in the phase header) indicating the user can proceed to Development. This could be a "Continue to Development →" link or button. The exact design is deferred to `Spec_Navigation.md` but the Design Spec acknowledges its presence.
 
@@ -268,24 +281,24 @@ The original subtitle ("Get every idea out of your head...") is replaced. This i
 
 | Element | Font | Weight | Size | Color |
 |---------|------|--------|------|-------|
-| Phase number | Noticia Text | Regular | 36pt | `#1A1A1A` |
+| Phase number | Domine | Regular | 36pt | `#1A1A1A` |
 | Phase name | Barlow | Thin | 36pt | `#1A1A1A` |
-| Phase subtitle | Noticia Text | Bold | 20pt | `#AFAFAF` |
-| Chat panel label ("Assistant") | Noticia Text | Regular | 16pt | `#636363` |
-| Chat AI messages | Noticia Text | Bold | 16pt | `#636363` |
-| Chat user messages | Noticia Text | Regular | 16pt | `#1A1A1A` |
-| Chat input placeholder | Noticia Text | Regular | 14pt | `#999999` |
-| Note content | Noticia Text | Regular | 14pt | `#1A1A1A` |
-| Consolidate button text | Noticia Text | Regular | 16pt | `#1A1A1A` |
+| Phase subtitle | Domine | Bold | 20pt | `#AFAFAF` |
+| Chat panel label ("Assistant") | Domine | Regular | 16pt | `#636363` |
+| Chat AI messages | Domine | Bold | 16pt | `#636363` |
+| Chat user messages | Domine | Regular | 16pt | `#1A1A1A` |
+| Chat input placeholder | Domine | Regular | 14pt | `#999999` |
+| Note content | Domine | Regular | 14pt | `#1A1A1A` |
+| Consolidate button text | Domine | Regular | 16pt | `#1A1A1A` |
 | Cluster label | Barlow | Medium | 14pt | `#1A1A1A` |
-| User avatar initials | Noticia Text | Italic | 14pt | `#1A1A1A` |
-| Error/status messages | Noticia Text | Regular | 14pt | `#636363` |
+| User avatar initials | Domine | Italic | 14pt | `#1A1A1A` |
+| Error/status messages | Domine | Regular | 14pt | `#636363` |
 
 ### Font rule for this surface
 
-Barlow is used for **structural labels** — the phase name and cluster labels. Noticia Text is used for **everything else** — content, chat messages, controls, metadata. This follows the HARD_RULES pattern: heading/structure font for orientation, body/content font for substance.
+Barlow is used for **structural labels** — the phase name and cluster labels. Domine is used for **everything else** — content, chat messages, controls, metadata. This follows the HARD_RULES pattern: heading/structure font for orientation, body/content font for substance.
 
-**Note on Noticia Text:** This spec uses Noticia Text (a Google Fonts slab serif) as the canonical body/content font, replacing the previously specified Noto Serif. HARD_RULES.md and DESIGN.md should be updated to reflect this change. The rationale is that Noticia Text better matches the editorial, warm, sketchbook aesthetic — its slab-serif character has more personality than Noto Serif's transitional forms.
+**Note on Domine:** Domine (a Google Fonts slab serif) is the project-wide canonical body/content font — see `HARD_RULES.md` and `DESIGN.md`. Italic styling is rendered as `Domine_400Regular` (upright) because Domine ships without italic variants; this is an accepted limitation in v1.
 
 ### Corner radius usage
 
@@ -440,14 +453,12 @@ Spec file: docs/discovery/Spec_Discovery_Design.md
   color picker, chat panel, consolidation states, and visual rules.
 
 Also read before starting:
-- docs/HARD_RULES.md (non-negotiable constraints — note: body font is
-  now Noticia Text, pending HARD_RULES update)
-- docs/design/DESIGN.md (design system tokens — note: body font and
-  note color tokens pending update)
+- docs/HARD_RULES.md (non-negotiable constraints)
+- docs/design/DESIGN.md (design system tokens)
 - docs/discovery/Spec_DiscoveryEngine.md (canvas logic, consolidation
   algorithm, layout constants)
 - docs/foundation/Spec_DataModel.md (DiscoveryNote entity — note:
-  color field pending addition)
+  `color: NoteColor` field added in implementation, pending v0.3 rollup)
 
 Use this spec as the source of truth for layout, states, and interaction
 rules when building the Discovery canvas UI.

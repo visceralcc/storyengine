@@ -34,20 +34,20 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 | Heading | Barlow | 600 (SemiBold) | 24pt–36pt |
 | Subheading | Barlow | 500 (Medium) | 18pt–20pt |
 | Label / Category | Barlow | 500 (Medium) | 12pt–14pt |
-| Body | Noto Serif | 400 (Regular) | 14pt–16pt |
-| Body Emphasis | Noto Serif | 600 (SemiBold) | 14pt–16pt |
-| Caption | Noto Serif | 400 (Regular) | 12pt |
+| Body | Domine | 400 (Regular) | 14pt–16pt |
+| Body Emphasis | Domine | 700 (Bold) | 14pt–16pt |
+| Caption | Domine | 400 (Regular) | 12pt |
 
 **Type rules:**
 - Minimum type size: **12pt** — nothing smaller, ever
 - Maximum type size: **36pt** — nothing larger, ever
 - Barlow is for **structure** (headings, labels, navigation, card type labels)
-- Noto Serif is for **content** (descriptions, chat messages, concept values, body text)
+- Domine is for **content** (descriptions, chat messages, concept values, body text)
 - Never mix both fonts in the same line of text
 - Concept Type labels always render in Barlow, Title Case with spaces
-- Concept values always render in Noto Serif
+- Concept values always render in Domine
 
-**Font sources:** Both from Google Fonts. Load via Expo's font loading system.
+**Font sources:** Both from Google Fonts (Barlow + Domine). Load via Expo's font loading system. **Note on Domine:** Domine ships without italic variants — any italic reference in specs renders as `Domine_400Regular` (upright) until/unless italic-capable fallback is added.
 
 ---
 
@@ -78,7 +78,7 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 - Border: subtle, using Surface Alt (`#E8E8E8`) or light shadow
 - No heavy drop shadows — keep it flat and editorial
 - Card header: Concept Type label in **Barlow 14pt Medium**, Title Case
-- Card body: Concept value in **Noto Serif 14pt Regular**
+- Card body: Concept value in **Domine 14pt Regular**
 - Image (if present): displayed above or alongside the text content
 - Version indicator: small, subtle (e.g., "v2" in Barlow 12pt)
 
@@ -93,8 +93,8 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 ### Chat Panel
 
 - Messages alternate between user (right-aligned or distinct styling) and assistant (left-aligned)
-- User messages: concise styling, Noto Serif
-- Assistant messages: Noto Serif, may include extracted concept previews
+- User messages: concise styling, Domine
+- Assistant messages: Domine, may include extracted concept previews
 - Input area at bottom: text field + send control
 - Full styling TBD in `Spec_Workspace_Design.md`
 
@@ -110,7 +110,7 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 
 **Do:**
 - Use generous white space — let the content breathe
-- Use Barlow for structure, Noto Serif for content — consistently
+- Use Barlow for structure, Domine for content — consistently
 - Keep cards clean and minimal — white background, subtle borders
 - Match the "editorial sketchbook" feel in every surface
 - Stay within the 4px–12px corner radius range
@@ -129,5 +129,5 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 
 - **Design file:** None yet — visual design is driven by this document and the PRD
 - **Icon set:** [TBD — to be chosen before Phase C]
-- **Font source:** Google Fonts (Barlow, Noto Serif)
+- **Font source:** Google Fonts (Barlow, Domine)
 - **Token source of truth:** This file (`docs/design/DESIGN.md`) until a code-level theme file is created

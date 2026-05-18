@@ -62,7 +62,7 @@ Both rows share an identical visual structure:
 - Position: Left edge at x≈125 from the viewport edge
 
 **Right side — Italic annotation:**
-- Font: Noticia Text Bold Italic
+- Font: Domine Bold Italic
 - Size: 24pt
 - Color: Dark text (`#1A1A1A`)
 - Alignment: Right-aligned against the right edge of the horizontal rule (x≈1024)
@@ -143,7 +143,7 @@ After the user taps "Start New Story," there's a brief moment while the project 
 
 If project creation fails (disk write error, permissions issue):
 
-- A brief error message appears below the "Start New Story" row: "Something went wrong — please try again." in Noticia Text Regular 14pt, secondary text color (`#636363`)
+- A brief error message appears below the "Start New Story" row: "Something went wrong — please try again." in Domine Regular 14pt, secondary text color (`#636363`)
 - The message fades after 5 seconds
 - The row returns to its default interactive state so the user can retry
 
@@ -167,10 +167,12 @@ The project existence check is optional — it's only needed if the screen ever 
 | Element | Font | Weight | Size | Color |
 |---------|------|--------|------|-------|
 | Action labels | Barlow | Thin (100) | 40pt | `#1A1A1A` |
-| Italic annotations | Noticia Text | Bold Italic | 24pt | `#1A1A1A` |
-| Error message | Noticia Text | Regular | 14pt | `#636363` |
+| Italic annotations | Domine | Bold Italic | 24pt | `#1A1A1A` |
+| Error message | Domine | Regular | 14pt | `#636363` |
 
-**Font rule for this surface:** Barlow Thin is used for the action labels (structural, navigational text). Noticia Text Bold Italic is used for the poetic annotations (content, editorial voice). This follows the established pattern: Barlow for structure, Noticia Text for content — but with an expressive twist: the annotations use bold italic to set them apart as a distinct editorial voice, like stage directions in a script.
+**Font rule for this surface:** Barlow Thin is used for the action labels (structural, navigational text). Domine Bold (with intended italic) is used for the poetic annotations (content, editorial voice). This follows the established pattern: Barlow for structure, Domine for content — but with an expressive twist: the annotations are intended to set them apart as a distinct editorial voice, like stage directions in a script.
+
+**Italic note:** Domine ships without italic variants, so any "Bold Italic" call in this spec renders as `Domine_700Bold` (upright) in v1. If italic emphasis is required to preserve the editorial voice, a future revision can either swap the body font or add an italic-capable companion face.
 
 **Size note:** The 40pt action labels exceed the HARD_RULES 36pt maximum. This is an intentional exception consistent with the Step Menu's 96pt phase names — the entry flow screens use display-scale typography as a design feature. The annotations at 24pt are within the standard range.
 
@@ -278,7 +280,7 @@ Also read before starting:
   one — understand the entry flow sequence)
 - docs/HARD_RULES.md (non-negotiable constraints)
 - docs/design/DESIGN.md (design system tokens — note: body font is
-  now Noticia Text, pending update)
+  now Domine, pending update)
 - docs/foundation/Spec_Navigation.md (route context)
 - docs/foundation/Spec_DataPersistence.md (createProject for the
   "Start New Story" flow)
@@ -288,7 +290,7 @@ interaction rules when building the Project Chooser screen.
 
 Key constraints:
 - Two rows only: "Open existing Story" and "Start New Story" (§3.3)
-- Action labels in Barlow Thin 40pt, annotations in Noticia Text
+- Action labels in Barlow Thin 40pt, annotations in Domine
   Bold Italic 24pt (§7)
 - Full row region is the tap target, not just the text (§4)
 - "Start New Story" calls createProject then navigates to Step Menu (§4.2)
