@@ -1,12 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 18, 2026 (Chat Engine Phase 2 complete)
+**Last updated:** May 18, 2026 (Chat Engine Phase 3 complete)
 
 ---
 
-## Current Phase: Implementing (Chat Engine Phase 2 complete)
+## Current Phase: Implementing (Chat Engine Phase 3 complete)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and Chat Engine Phases 1–2 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine has a streaming Anthropic API client (Phase 1) plus phase-adaptive system prompts and context assembly with note/history caps (Phase 2). Discovery chat integration (Phase 3) is next.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and Chat Engine Phases 1–3 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine has a streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly (Phase 2), and a Discovery response parser + viewport-placement extraction (Phase 3). Wiring the Discovery chat UI to the engine — and Development chat integration (Phase 4) — are next.
 
 ---
 
@@ -165,19 +165,19 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | **Discovery UI** | **Phase 6 — Trackpad pan + flow verification** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
 | Chat Engine | 1 — API client + streaming | ✅ Complete | `src/engine/chat/types.ts`, `src/engine/chat/client.ts` |
 | Chat Engine | 2 — Context assembly | ✅ Complete | `src/engine/chat/prompts.ts`, `src/engine/chat/context.ts` |
-| Chat Engine | 3 — Discovery chat integration | ⬜ | not started |
+| Chat Engine | 3 — Discovery chat integration | ✅ Complete | `src/engine/chat/parser.ts`, `src/engine/chat/extraction.ts` |
 | Chat Engine | 4 — Development chat integration | ⬜ | not started |
 | Chat Engine | 5 — Custom ConceptType creation | ⬜ | not started |
 | Chat Engine | 6 — Gap-aware conversation | ⬜ | not started |
 | Chat Engine | 7 — Refinement chat integration | ⬜ | not started |
 
-Tests: 108 passing (20 model, 16 canvas, 28 persistence, 44 chat).
+Tests: 128 passing (20 model, 16 canvas, 28 persistence, 64 chat).
 
 ---
 
 ## What's Next
 
-**Immediate next step:** Chat Engine Phase 3 — Discovery chat integration. Build the response parser (split chat text from the fenced JSON block) and the extraction pipeline that turns parsed notes into `DiscoveryNote` entities. Phase 3 unblocks Discovery Engine Phase 2 (chat-driven extraction). `Spec_Workspace_Design.md` (Phase D, Order 8) is the next pending Design Spec.
+**Immediate next step:** Chat Engine Phase 4 — Development chat integration. Add `parseExtractionResponse` (concepts / updatedConcepts / suggestedNewTypes per §5.2) reusing the `extractJsonBlock` splitter, plus Concept + ConceptVersion entity creation and REFINE / RETHINK follow-up refinement logic with ConceptType validation. Wiring the Discovery chat panel UI to send/stream/parse via the engine is also a near-term task (the engine is ready). `Spec_Workspace_Design.md` (Phase D, Order 8) is the next pending Design Spec.
 
 **Companion doc updates still pending:** DataModel needs v0.3 revision to roll up the in-code NoteColor type and the GapAnalysis interfaces from Discovery_Design v0.1 / DiscoveryEngine v0.1.
 
