@@ -1,12 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 18, 2026
+**Last updated:** May 18, 2026 (Chat Engine Phase 1 complete)
 
 ---
 
-## Current Phase: Implementing (Discovery UI persisted)
+## Current Phase: Implementing (Chat Engine Phase 1 complete)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, and DataPersistence Phases 1–2 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. AI/consolidation engine integration is still pending.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and Chat Engine Phase 1 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine now has a streaming Anthropic API client with AbortController cancellation and typed error handling; context assembly (Phase 2) is next.
 
 ---
 
@@ -17,7 +17,7 @@ Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). 
 | 1 | PRD | ✅ Complete | `Spec_Story_Engine_PRD.md` — v0.3, four-phase pipeline model |
 | 2 | Templates | ✅ Complete | `Templates_SpecDocs.md` — Tech Spec, Design Spec, Buildable Unit templates |
 | 3 | Structure Map | ✅ Complete | `Structure_Map.md` — v0.2, rewritten for pipeline model. 8 feature folders, 13 Level 2 specs. |
-| 4 | Level 2 Specs | 🟡 In progress | 8 of 15 complete |
+| 4 | Level 2 Specs | 🟡 In progress | 9 of 15 complete |
 | 5 | Level 3 Buildable Units | ⬜ Not started | ~22 anticipated, depends on Level 2 |
 | 6 | Claude Code Handoff | 🟡 In progress | Entry flow implemented; Discovery UI next |
 | 7 | Spec Updates | ⬜ Not started | Ongoing as implementation reveals gaps |
@@ -35,7 +35,7 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | A — Foundation | 3 | `Spec_Navigation.md` | ✅ Complete (v0.2) |
 | B — Discovery | 4 | `Spec_DiscoveryEngine.md` | ✅ Complete (v0.1) |
 | B — Discovery | 5 | `Spec_Discovery_Design.md` | ✅ Complete (v0.1) |
-| C — Core Engine | 6 | `Spec_ChatEngine.md` | ⬜ Next up |
+| C — Core Engine | 6 | `Spec_ChatEngine.md` | ✅ Complete (v0.1) |
 | D — Surfaces | 7 | `Spec_SplashScreen_Design.md` | ✅ Complete (v0.1) |
 | D — Surfaces | 7b | `Spec_ProjectChooser_Design.md` | ✅ Complete (v0.1) |
 | D — Surfaces | 7c | `Spec_StepMenu_Design.md` | ✅ Complete (v0.1) |
@@ -88,8 +88,13 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Phase locking on Step Menu | Phases unlock sequentially — only completed + next phase are tappable | StepMenu_Design v0.1 |
 | Project List is separate screen | "Open existing Story" navigates to a dedicated Project List screen/overlay | ProjectChooser_Design v0.1 |
 | Entry flow typography exceptions | 260pt (Splash), 96pt (Step Menu), 40pt (Chooser) intentionally exceed 36pt HARD_RULES max | SplashScreen_Design v0.1 |
-| Body font: Noticia Text | Noticia Text (Google Fonts slab serif) replaces Noto Serif as canonical body/content font. Pending update to HARD_RULES.md and DESIGN.md. | Discovery_Design v0.1 |
+| Body font: Aleo | Aleo (Google Fonts slab serif) is the canonical body/content font. Replaces Noto Serif (original) → Noticia Text → Domine → Aleo. Has Regular, Italic, and Bold variants. | Discovery_Design v0.1, updated in implementation |
 | Chat panel label: "Assistant" | Chat panel labeled "Assistant" across all phases. Placeholder name — can be changed later. | Discovery_Design v0.1 |
+| Anthropic API: Sonnet 4 | claude-sonnet-4-20250514, max_tokens 4096, temperature 0.7, streaming enabled | ChatEngine v0.1 |
+| Embedded JSON for structured output | Response format: conversational text + optional fenced JSON block (no tool use in v1) | ChatEngine v0.1 |
+| Phase-adaptive system prompts | One pipeline, four personalities — prompt changes by phase, mechanics stay the same | ChatEngine v0.1 |
+| RETHINK requires confirmation | Major concept version changes (RETHINK) trigger user confirmation; REFINE applies automatically | ChatEngine v0.1 |
+| Context caps | 40 message history cap, 50 Discovery note cap in context | ChatEngine v0.1 |
 
 ---
 
@@ -101,7 +106,7 @@ The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMappin
 
 ## Companion Doc Updates Pending
 
-_None._ Body font Noto Serif → Domine (final, after a Noticia Text waystation) has been propagated across HARD_RULES.md, DESIGN.md, Spec_Story_Engine_PRD.md, Templates_SpecDocs.md, Spec_Discovery_Design.md, Spec_SplashScreen_Design.md, Spec_ProjectChooser_Design.md, and Spec_StepMenu_Design.md. Italic styling falls back to upright Domine in v1 (Domine ships without italic variants — see DESIGN.md and ProjectChooser §7 for the explicit note).
+_None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has been propagated across HARD_RULES.md, DESIGN.md, and all codebase fontFamily references. Aleo ships with Regular, Italic, and Bold variants — no italic fallback needed.
 
 ---
 
@@ -120,6 +125,7 @@ _None._ Body font Noto Serif → Domine (final, after a Noticia Text waystation)
 | `foundation/Spec_Navigation.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
 | `discovery/Spec_DiscoveryEngine.md` | Tech Spec (Level 2) | ✅ Complete (v0.1) |
 | `discovery/Spec_Discovery_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
+| `chat-engine/Spec_ChatEngine.md` | Tech Spec (Level 2) | ✅ Complete (v0.1) |
 | `start-screen/Spec_SplashScreen_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 | `start-screen/Spec_ProjectChooser_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 | `start-screen/Spec_StepMenu_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
@@ -148,7 +154,7 @@ _None._ Body font Noto Serif → Domine (final, after a Noticia Text waystation)
 | **Entry Flow UI** | **Splash Screen** | **✅ Complete** | **`app/index.tsx`** |
 | **Entry Flow UI** | **Project Chooser** | **✅ Complete** | **`app/choose.tsx`** |
 | **Entry Flow UI** | **Step Menu** | **✅ Complete** | **`app/project/[projectId]/steps.tsx`** |
-| **Entry Flow UI** | **Font loading** | **✅ Complete** | **`app/_layout.tsx` (Barlow_100Thin, Barlow_500Medium, Domine_400Regular, Domine_700Bold)** |
+| **Entry Flow UI** | **Font loading** | **✅ Complete** | **`app/_layout.tsx` (Barlow_100Thin, Barlow_500Medium, Aleo_400Regular, Aleo_400Regular_Italic, Aleo_700Bold)** |
 | **Entry Flow UI** | **Real project IDs** | **✅ Complete** | **`app/choose.tsx` uses initializeProject** |
 | **Discovery UI** | **Data model additions (NoteColor)** | **✅ Complete** | **`src/models/types.ts`, `src/models/noteColors.ts`, `src/models/factories.ts`** |
 | **Discovery UI** | **Phase 1 — Screen shell + header** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
@@ -157,18 +163,21 @@ _None._ Body font Noto Serif → Domine (final, after a Noticia Text waystation)
 | **Discovery UI** | **Phase 4 — Canvas + note placement / edit / drag / delete** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
 | **Discovery UI** | **Phase 5 — Consolidate Ideas button (UI stub)** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
 | **Discovery UI** | **Phase 6 — Trackpad pan + flow verification** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
+| Chat Engine | 1 — API client + streaming | ✅ Complete | `src/engine/chat/types.ts`, `src/engine/chat/client.ts` |
+| Chat Engine | 2 — Context assembly | ⬜ | not started |
+| Chat Engine | 3 — Discovery chat integration | ⬜ | not started |
+| Chat Engine | 4 — Development chat integration | ⬜ | not started |
+| Chat Engine | 5 — Custom ConceptType creation | ⬜ | not started |
+| Chat Engine | 6 — Gap-aware conversation | ⬜ | not started |
+| Chat Engine | 7 — Refinement chat integration | ⬜ | not started |
 
-Tests: 64 passing (20 model, 16 canvas, 28 persistence).
+Tests: 81 passing (20 model, 16 canvas, 28 persistence, 17 chat).
 
 ---
 
 ## What's Next
 
-**Immediate next step:** Layer AI on top of the now-persisted Discovery surface. Project lifecycle (DataPersistence Phase 2) is complete — projects and Discovery state survive a page refresh via `localStorage` (the spec's local server is still Phase 5). The next priorities are:
-- `Spec_ChatEngine.md` (Phase C, Order 6) — unblocks AI chat responses and stream-of-consciousness extraction
-- Discovery Engine Phases 2–5 — consolidation, gap analysis, re-consolidation
-- DataPersistence Phase 3 — save queue with debounce + flush priority (today every change writes immediately)
-- A dedicated Project List screen — the chooser currently shows an inline list as a Phase 2 placeholder
+**Immediate next step:** Chat Engine Phase 2 — context assembly (`src/engine/chat/context.ts`, `prompts.ts`) per Spec_ChatEngine §3 + §4. Then Phase 3 (Discovery chat integration: response parser, DiscoveryNote creation) which unblocks Discovery Engine Phase 2 (chat-driven note extraction). `Spec_Workspace_Design.md` (Phase D, Order 8) is the next pending Design Spec.
 
 **Companion doc updates still pending:** DataModel needs v0.3 revision to roll up the in-code NoteColor type and the GapAnalysis interfaces from Discovery_Design v0.1 / DiscoveryEngine v0.1.
 

@@ -22,6 +22,7 @@
     ]
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.96.0",
     "@expo-google-fonts/aleo": "^0.4.2",
     "@expo-google-fonts/barlow": "^0.4.1",
     "@expo/metro-runtime": "~4.0.1",
