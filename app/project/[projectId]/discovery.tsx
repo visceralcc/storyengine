@@ -69,6 +69,17 @@ const DELETE_BUTTON_SIZE = 18;
 const DRAG_PX_THRESHOLD = 5;
 const DRAG_MS_THRESHOLD = 150;
 
+// Consolidate Ideas button — Spec_Discovery_Design.md §3.5, §5.2
+const CONSOLIDATE_BG = '#D2D2D2';
+const CONSOLIDATE_BORDER = '#B8B8B8';
+const CONSOLIDATE_BG_HOVER = '#C4C4C4';
+const CONSOLIDATE_HEIGHT = 48;
+const CONSOLIDATE_RADIUS = 71;
+const CONSOLIDATE_GAP_FROM_CHAT = 16;
+const CONSOLIDATE_MIN_NOTES = 3;
+const TOO_FEW_FADE_MS = 3000;
+const LOADING_DEMO_RESET_MS = 2500;
+
 type ChatMessage = {
   id: string;
   role: 'assistant' | 'user';
@@ -93,7 +104,10 @@ export default function DiscoveryRoute() {
     <View style={styles.container}>
       <PhaseHeader />
       <View style={styles.contentRow}>
-        <ChatPanel />
+        <View style={styles.leftColumn}>
+          <ChatPanel />
+          <ConsolidateButton noteCount={notes.length} />
+        </View>
         <NoteToolStrip
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
@@ -609,6 +623,77 @@ function DiscoveryNoteCard({
   );
 }
 
+type ConsolidateButtonProps = {
+  noteCount: number;
+};
+
+function ConsolidateButton({ noteCount }: ConsolidateButtonProps) {
+  const enabled = noteCount >= CONSOLIDATE_MIN_NOTES;
+  const [loading, setLoading] = useState(false);
+  const [showTooFew, setShowTooFew] = useState(false);
+  const tooFewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (tooFewTimer.current) clearTimeout(tooFewTimer.current);
+      if (loadingTimer.current) clearTimeout(loadingTimer.current);
+    };
+  }, []);
+
+  // The disabled-tap message clears itself once enough notes exist.
+  useEffect(() => {
+    if (enabled && showTooFew) {
+      if (tooFewTimer.current) clearTimeout(tooFewTimer.current);
+      setShowTooFew(false);
+    }
+  }, [enabled, showTooFew]);
+
+  const onPress = () => {
+    if (loading) return;
+    if (!enabled) {
+      setShowTooFew(true);
+      if (tooFewTimer.current) clearTimeout(tooFewTimer.current);
+      tooFewTimer.current = setTimeout(() => setShowTooFew(false), TOO_FEW_FADE_MS);
+      return;
+    }
+    // Phase 5 stub: no engine yet — log + show loading state briefly so the
+    // UI flow can be exercised end-to-end before consolidation is wired up.
+    console.log('Consolidate Ideas tapped — engine stub (Phase 5)');
+    setLoading(true);
+    if (loadingTimer.current) clearTimeout(loadingTimer.current);
+    loadingTimer.current = setTimeout(() => setLoading(false), LOADING_DEMO_RESET_MS);
+  };
+
+  return (
+    <View style={styles.consolidateWrap}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Consolidate ideas"
+        accessibilityState={{ disabled: !enabled, busy: loading }}
+        onPress={onPress}
+        style={(state) => [
+          styles.consolidateButton,
+          !enabled && styles.consolidateButtonDisabled,
+          enabled &&
+            !loading &&
+            (state as { hovered?: boolean }).hovered &&
+            styles.consolidateButtonHover,
+        ]}
+      >
+        <Text style={styles.consolidateText}>
+          {loading ? 'Consolidating...' : 'Consolidate Ideas'}
+        </Text>
+      </Pressable>
+      {showTooFew && (
+        <Text style={styles.consolidateHint}>
+          Add a few more ideas first — you need at least 3 notes.
+        </Text>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -671,11 +756,49 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     paddingRight: 0,
   },
-  chatPanel: {
+  leftColumn: {
     width: CHAT_PANEL_WIDTH,
+    flexDirection: 'column',
+  },
+  chatPanel: {
+    flex: 1,
     backgroundColor: SURFACE,
     borderRadius: 10,
     padding: CHAT_PANEL_INNER_PAD,
+  },
+  consolidateWrap: {
+    marginTop: CONSOLIDATE_GAP_FROM_CHAT,
+    alignItems: 'center',
+  },
+  consolidateButton: {
+    width: '100%',
+    height: CONSOLIDATE_HEIGHT,
+    borderRadius: CONSOLIDATE_RADIUS,
+    backgroundColor: CONSOLIDATE_BG,
+    borderWidth: 1,
+    borderColor: CONSOLIDATE_BORDER,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  consolidateButtonHover: {
+    backgroundColor: CONSOLIDATE_BG_HOVER,
+  },
+  consolidateButtonDisabled: {
+    opacity: 0.45,
+  },
+  consolidateText: {
+    fontFamily: 'NoticiaText_400Regular',
+    fontSize: 16,
+    color: TEXT_DARK,
+    includeFontPadding: false,
+  },
+  consolidateHint: {
+    marginTop: 8,
+    fontFamily: 'NoticiaText_400Regular',
+    fontSize: 14,
+    color: TEXT_SECONDARY,
+    includeFontPadding: false,
+    textAlign: 'center',
   },
   chatLabel: {
     fontFamily: 'Domine_400Regular',
