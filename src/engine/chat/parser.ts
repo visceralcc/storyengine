@@ -5,12 +5,16 @@
  * the end (§5). The chat panel displays the text; the JSON block (if present
  * and well-formed) carries the structured extraction payload.
  *
- * Phase 3 scope: Discovery's `{ notes: string[] }` format (§5.1).
- * Phase 4 will add `parseExtractionResponse` for the Development /
- * Refinement format (§5.2) using the same {@link extractJsonBlock} splitter.
+ *   - Discovery: `{ notes: string[] }` per §5.1 → {@link parseDiscoveryResponse}
+ *   - Development / Refinement: `{ concepts, updatedConcepts, suggestedNewTypes }`
+ *     per §5.2 → {@link parseExtractionResponse}
+ *
+ * Both reuse {@link extractJsonBlock} to split chat text from the JSON block.
  *
  * Source of truth: docs/chat-engine/Spec_ChatEngine.md §5, §10.
  */
+
+import type { Dimension } from '../../models/types';
 
 // --- Generic splitter ---
 
@@ -137,4 +141,162 @@ function readNotesArray(parsed: unknown): string[] | null {
     if (typeof n === 'string' && n.trim().length > 0) cleaned.push(n);
   }
   return cleaned;
+}
+
+// --- Development / Refinement (§5.2) ---
+
+const VALID_DIMENSIONS: ReadonlySet<Dimension> = new Set([
+  'WORLD',
+  'CHARACTER',
+  'CONFLICT',
+  'STORYLINE',
+]);
+
+export type EditType = 'REFINE' | 'RETHINK';
+
+export interface ParsedNewConcept {
+  conceptTypeLabel: string;
+  value: string;
+  dimension: Dimension;
+}
+
+export interface ParsedUpdatedConcept {
+  existingConceptType: string;
+  newValue: string;
+  /**
+   * Per §5.3 validation: an invalid value here defaults to `'REFINE'`
+   * (the safer choice — small edits, no version history pollution).
+   */
+  editType: EditType;
+}
+
+export interface ParsedSuggestedType {
+  label: string;
+  description: string;
+  dimension: Dimension;
+}
+
+export interface ExtractionParseResult {
+  chatResponse: string;
+  concepts: ParsedNewConcept[];
+  updatedConcepts: ParsedUpdatedConcept[];
+  suggestedNewTypes: ParsedSuggestedType[];
+  /** Set when a fenced JSON block was found but the shape was wrong. See {@link DiscoveryParseResult.parseError}. */
+  parseError: Error | null;
+}
+
+/**
+ * Parse a Development- or Refinement-phase response (§5.2). Never throws.
+ *
+ * Three top-level arrays are optional — any combination can appear:
+ *   - `concepts`         brand-new Concepts to create
+ *   - `updatedConcepts`  refinements / rethinks of existing Concepts
+ *   - `suggestedNewTypes` custom ConceptTypes the AI wants to add
+ *
+ * Schema-level validation only — the applier in `extraction.ts` does the
+ * project-state validation (label matching, dimension correction, duplicate
+ * detection) per §5.3.
+ *
+ * Failure modes mirror {@link parseDiscoveryResponse}:
+ *   - No fenced block → all arrays empty, no error (chat-only response)
+ *   - Malformed JSON  → entire response treated as plain chat, parseError set
+ *   - Wrong root shape (e.g. array instead of object) → parseError set
+ */
+export function parseExtractionResponse(response: string): ExtractionParseResult {
+  const split = extractJsonBlock(response);
+
+  if (split.json === null) {
+    return {
+      chatResponse: split.text.length > 0 ? split.text : EMPTY_CHAT_SYNTHETIC,
+      concepts: [],
+      updatedConcepts: [],
+      suggestedNewTypes: [],
+      parseError: null,
+    };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(split.json);
+  } catch (err) {
+    return {
+      chatResponse: response.trim(),
+      concepts: [],
+      updatedConcepts: [],
+      suggestedNewTypes: [],
+      parseError: err instanceof Error ? err : new Error(String(err)),
+    };
+  }
+
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return {
+      chatResponse: response.trim(),
+      concepts: [],
+      updatedConcepts: [],
+      suggestedNewTypes: [],
+      parseError: new Error(
+        'Extraction response JSON root was not an object (§5.2).',
+      ),
+    };
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  const concepts = readNewConcepts(obj.concepts);
+  const updatedConcepts = readUpdatedConcepts(obj.updatedConcepts);
+  const suggestedNewTypes = readSuggestedTypes(obj.suggestedNewTypes);
+
+  const chatResponse = split.text.length > 0 ? split.text : EMPTY_CHAT_SYNTHETIC;
+  return { chatResponse, concepts, updatedConcepts, suggestedNewTypes, parseError: null };
+}
+
+function readNewConcepts(raw: unknown): ParsedNewConcept[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ParsedNewConcept[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const conceptTypeLabel = typeof e.conceptTypeLabel === 'string' ? e.conceptTypeLabel.trim() : '';
+    const value = typeof e.value === 'string' ? e.value.trim() : '';
+    const dimension = readDimension(e.dimension);
+    if (!conceptTypeLabel || !value || !dimension) continue;
+    out.push({ conceptTypeLabel, value, dimension });
+  }
+  return out;
+}
+
+function readUpdatedConcepts(raw: unknown): ParsedUpdatedConcept[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ParsedUpdatedConcept[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const existingConceptType = typeof e.existingConceptType === 'string' ? e.existingConceptType.trim() : '';
+    const newValue = typeof e.newValue === 'string' ? e.newValue.trim() : '';
+    if (!existingConceptType || !newValue) continue;
+    // §5.3 — invalid editType defaults to REFINE.
+    const editType: EditType = e.editType === 'RETHINK' ? 'RETHINK' : 'REFINE';
+    out.push({ existingConceptType, newValue, editType });
+  }
+  return out;
+}
+
+function readSuggestedTypes(raw: unknown): ParsedSuggestedType[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ParsedSuggestedType[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const label = typeof e.label === 'string' ? e.label.trim() : '';
+    const description = typeof e.description === 'string' ? e.description.trim() : '';
+    const dimension = readDimension(e.dimension);
+    if (!label || !dimension) continue;
+    out.push({ label, description, dimension });
+  }
+  return out;
+}
+
+function readDimension(raw: unknown): Dimension | null {
+  if (typeof raw !== 'string') return null;
+  const upper = raw.toUpperCase();
+  return VALID_DIMENSIONS.has(upper as Dimension) ? (upper as Dimension) : null;
 }

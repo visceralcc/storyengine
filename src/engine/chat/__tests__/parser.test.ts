@@ -11,7 +11,12 @@
  *   - Non-string entries in notes array → filtered
  */
 
-import { EMPTY_CHAT_SYNTHETIC, extractJsonBlock, parseDiscoveryResponse } from '../parser';
+import {
+  EMPTY_CHAT_SYNTHETIC,
+  extractJsonBlock,
+  parseDiscoveryResponse,
+  parseExtractionResponse,
+} from '../parser';
 
 describe('extractJsonBlock', () => {
   it('returns null json when no fenced block is present', () => {
@@ -100,5 +105,133 @@ describe('parseDiscoveryResponse', () => {
     const out = parseDiscoveryResponse(response);
     expect(out.notes).toEqual(['good', 'also good']);
     expect(out.parseError).toBeNull();
+  });
+});
+
+describe('parseExtractionResponse (§5.2)', () => {
+  it('treats a response with no JSON block as chat-only (all arrays empty)', () => {
+    const out = parseExtractionResponse('Tell me more about her motivation.');
+    expect(out.concepts).toEqual([]);
+    expect(out.updatedConcepts).toEqual([]);
+    expect(out.suggestedNewTypes).toEqual([]);
+    expect(out.chatResponse).toBe('Tell me more about her motivation.');
+    expect(out.parseError).toBeNull();
+  });
+
+  it('parses concepts, updatedConcepts, and suggestedNewTypes together', () => {
+    const response = [
+      "I've captured these and proposed a new type.",
+      '',
+      '```json',
+      JSON.stringify({
+        concepts: [
+          { conceptTypeLabel: 'Time Period', value: '1820s France', dimension: 'WORLD' },
+        ],
+        updatedConcepts: [
+          { existingConceptType: 'Physical Build', newValue: 'Tall and athletic', editType: 'REFINE' },
+        ],
+        suggestedNewTypes: [
+          { label: 'Cultural Practice', description: 'Rituals and customs', dimension: 'WORLD' },
+        ],
+      }),
+      '```',
+    ].join('\n');
+
+    const out = parseExtractionResponse(response);
+    expect(out.concepts).toEqual([
+      { conceptTypeLabel: 'Time Period', value: '1820s France', dimension: 'WORLD' },
+    ]);
+    expect(out.updatedConcepts).toEqual([
+      { existingConceptType: 'Physical Build', newValue: 'Tall and athletic', editType: 'REFINE' },
+    ]);
+    expect(out.suggestedNewTypes).toEqual([
+      { label: 'Cultural Practice', description: 'Rituals and customs', dimension: 'WORLD' },
+    ]);
+    expect(out.parseError).toBeNull();
+  });
+
+  it('defaults an invalid editType to REFINE (§5.3)', () => {
+    const response =
+      '```json\n{"updatedConcepts":[{"existingConceptType":"Motivation","newValue":"X","editType":"WAT"}]}\n```';
+    const out = parseExtractionResponse(response);
+    expect(out.updatedConcepts[0].editType).toBe('REFINE');
+  });
+
+  it('accepts a missing editType field and treats it as REFINE', () => {
+    const response =
+      '```json\n{"updatedConcepts":[{"existingConceptType":"Motivation","newValue":"X"}]}\n```';
+    const out = parseExtractionResponse(response);
+    expect(out.updatedConcepts[0].editType).toBe('REFINE');
+  });
+
+  it('preserves RETHINK editType when present', () => {
+    const response =
+      '```json\n{"updatedConcepts":[{"existingConceptType":"Motivation","newValue":"X","editType":"RETHINK"}]}\n```';
+    const out = parseExtractionResponse(response);
+    expect(out.updatedConcepts[0].editType).toBe('RETHINK');
+  });
+
+  it('drops entries with missing required fields', () => {
+    const response = [
+      '```json',
+      JSON.stringify({
+        concepts: [
+          { conceptTypeLabel: '', value: 'x', dimension: 'WORLD' }, // empty label
+          { conceptTypeLabel: 'Time Period', value: '', dimension: 'WORLD' }, // empty value
+          { conceptTypeLabel: 'Time Period', value: '1820s', dimension: 'NOPE' }, // bad dim
+          { conceptTypeLabel: 'Time Period', value: '1820s', dimension: 'WORLD' }, // good
+        ],
+      }),
+      '```',
+    ].join('\n');
+    const out = parseExtractionResponse(response);
+    expect(out.concepts).toEqual([
+      { conceptTypeLabel: 'Time Period', value: '1820s', dimension: 'WORLD' },
+    ]);
+  });
+
+  it('normalizes dimension casing to uppercase', () => {
+    const response =
+      '```json\n{"concepts":[{"conceptTypeLabel":"Time Period","value":"1820s","dimension":"world"}]}\n```';
+    const out = parseExtractionResponse(response);
+    expect(out.concepts[0].dimension).toBe('WORLD');
+  });
+
+  it('treats missing top-level arrays as empty', () => {
+    const out = parseExtractionResponse('```json\n{}\n```');
+    expect(out.concepts).toEqual([]);
+    expect(out.updatedConcepts).toEqual([]);
+    expect(out.suggestedNewTypes).toEqual([]);
+    expect(out.parseError).toBeNull();
+  });
+
+  it('falls back to plain chat on malformed JSON', () => {
+    const response = 'chat\n\n```json\n{not json}\n```';
+    const out = parseExtractionResponse(response);
+    expect(out.concepts).toEqual([]);
+    expect(out.chatResponse).toBe(response.trim());
+    expect(out.parseError).toBeInstanceOf(Error);
+  });
+
+  it('returns parseError when the JSON root is an array, not an object', () => {
+    const out = parseExtractionResponse('chat\n\n```json\n[1,2,3]\n```');
+    expect(out.parseError).toBeInstanceOf(Error);
+    expect(out.parseError?.message).toMatch(/root/);
+  });
+
+  it('uses the synthetic chat message when only a JSON block is returned (§10)', () => {
+    const out = parseExtractionResponse('```json\n{"concepts":[]}\n```');
+    expect(out.chatResponse).toBe(EMPTY_CHAT_SYNTHETIC);
+  });
+
+  it('trims whitespace inside concept fields', () => {
+    const response =
+      '```json\n{"concepts":[{"conceptTypeLabel":"  Time Period  ","value":"  1820s  ","dimension":"WORLD"}]}\n```';
+    const out = parseExtractionResponse(response);
+    expect(out.concepts[0]).toEqual({
+      conceptTypeLabel: 'Time Period',
+      value: '1820s',
+      dimension: 'WORLD',
+    });
   });
 });
