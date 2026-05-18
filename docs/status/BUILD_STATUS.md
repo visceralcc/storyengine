@@ -1,12 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 17, 2026
+**Last updated:** May 18, 2026
 
 ---
 
-## Current Phase: Implementing (Entry Flow complete, Discovery UI next)
+## Current Phase: Implementing (Discovery UI shell complete)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, and DataPersistence Phase 1 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. Discovery UI build is next.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, and DataPersistence Phase 1 are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is now complete end-to-end (Phases 1–6): phase header, chat panel with local message state, note color picker with placement toggle, pannable canvas with note placement / edit / drag / delete, Consolidate Ideas button (stub), and trackpad pan polish. AI/consolidation engine integration is still pending.
 
 ---
 
@@ -152,24 +152,24 @@ The body font change from Noto Serif to Noticia Text (decided in Discovery_Desig
 | **Entry Flow UI** | **Step Menu** | **✅ Complete** | **`app/project/[projectId]/steps.tsx`** |
 | **Entry Flow UI** | **Font loading** | **✅ Complete** | **`app/_layout.tsx` (Barlow_100Thin, NoticiaText_700Bold_Italic)** |
 | **Entry Flow UI** | **Real project IDs** | **✅ Complete** | **`app/choose.tsx` uses initializeProject** |
-| Discovery UI | Screen shell + header | ⬜ Next up | `app/project/[projectId]/discovery.tsx` |
-| Discovery UI | Chat panel | ⬜ | |
-| Discovery UI | Color picker | ⬜ | |
-| Discovery UI | Canvas + notes | ⬜ | |
-| Discovery UI | Consolidate button | ⬜ | |
+| **Discovery UI** | **Data model additions (NoteColor)** | **✅ Complete** | **`src/models/types.ts`, `src/models/noteColors.ts`, `src/models/factories.ts`** |
+| **Discovery UI** | **Phase 1 — Screen shell + header** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
+| **Discovery UI** | **Phase 2 — Chat panel (local-only)** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
+| **Discovery UI** | **Phase 3 — Note color picker + placement toggle** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`, `assets/buttons/`** |
+| **Discovery UI** | **Phase 4 — Canvas + note placement / edit / drag / delete** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
+| **Discovery UI** | **Phase 5 — Consolidate Ideas button (UI stub)** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
+| **Discovery UI** | **Phase 6 — Trackpad pan + flow verification** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
 
-Tests: 50 passing (19 model, 16 canvas, 15 persistence).
+Tests: 51 passing (20 model, 16 canvas, 15 persistence).
 
 ---
 
 ## What's Next
 
-**Immediate next step:** Discovery Screen UI build — replace the placeholder at `app/project/[projectId]/discovery.tsx` with the spec-accurate Discovery canvas. Handoff prompt written at `docs/handoffs/Discovery_Screen_Handoff.md`. Build phases: data model additions (NoteColor) → screen shell + header → chat panel → color picker → canvas + notes → consolidate button → polish.
-
-**After Discovery UI:** The canvas UI will be built without AI integration (local-only chat, no consolidation engine). The next priorities after the UI shell are:
+**Immediate next step:** Wire the Discovery UI to real persistence and AI. The canvas currently holds notes and clusters in local `useState` — nothing is saved. The next priorities are:
 - `Spec_ChatEngine.md` (Phase C, Order 6) — unblocks AI chat responses and stream-of-consciousness extraction
 - Discovery Engine Phases 2–5 — consolidation, gap analysis, re-consolidation
-- DataPersistence Phase 2 — project lifecycle so projects actually save to disk
+- DataPersistence Phase 2 — project lifecycle so projects (and Discovery notes) actually save to disk
 
 **Companion doc updates still pending:** HARD_RULES.md and DESIGN.md need body font updated from Noto Serif to Noticia Text. DataModel needs v0.3 revision for NoteColor type and GapAnalysis interfaces.
 
