@@ -5,7 +5,7 @@
  *   - Discovery context: note cap at 50, overflow summary, ordering by recency
  *   - Development context: concept summarization, ConceptType filtering by
  *     active dimension, gap analysis pass-through
- *   - Refinement context: ConceptType filter widens to include STORYLINE
+ *   - Refinement context: ConceptType filter uses the same active-dimension rule as Development (§3.2 — Refinement no longer widens to a Storyline dimension)
  *   - System prompt layering: Base Identity + phase prompt + project context
  *   - Conversation history: phase scoping, message cap, role/content mapping
  */
@@ -152,11 +152,11 @@ describe('buildDevelopmentContext', () => {
       isDefault: true,
       now: '2026-05-01T00:00:00.000Z',
     });
-    const storyArc = createConceptType({
+    const themeType = createConceptType({
       projectId: PROJECT_ID,
-      label: 'Story Arc',
-      description: 'Overall arc shape',
-      dimension: 'STORYLINE',
+      label: 'Theme',
+      description: 'The abstract ideas the story explores',
+      dimension: 'THEME',
       isDefault: true,
       now: '2026-05-01T00:00:00.000Z',
     });
@@ -169,7 +169,7 @@ describe('buildDevelopmentContext', () => {
     });
     return {
       project,
-      conceptTypes: [timePeriod, motivation, storyArc],
+      conceptTypes: [timePeriod, motivation, themeType],
       concepts: [motivationConcept],
     };
   }
@@ -215,7 +215,7 @@ describe('buildDevelopmentContext', () => {
     });
   });
 
-  it('widens ConceptType filter to active + STORYLINE for Refinement', () => {
+  it('uses the same active-dimension filter for Refinement as Development (no STORYLINE widening)', () => {
     const { project, conceptTypes, concepts } = setupProject();
     const ctx = buildDevelopmentContext({
       project,
@@ -228,7 +228,10 @@ describe('buildDevelopmentContext', () => {
     });
 
     const labels = ctx.conceptTypes.map((t) => t.label).sort();
-    expect(labels).toEqual(['Motivation', 'Story Arc']);
+    expect(labels).toEqual(['Motivation']);
+    // THEME types are not included by default — callers who want all three
+    // dimensions in Refinement pass includeConceptType: () => true.
+    expect(ctx.conceptTypes.some((t) => t.dimension === 'THEME')).toBe(false);
   });
 
   it('lets callers override the ConceptType filter', () => {

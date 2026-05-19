@@ -22,7 +22,7 @@ describe('openingMessageText (§9.1)', () => {
   const cases: { gravity: OpeningMessageGravity; matcher: RegExp }[] = [
     { gravity: 'CHARACTER', matcher: /energy around a character/ },
     { gravity: 'WORLD', matcher: /vivid world/ },
-    { gravity: 'CONFLICT', matcher: /sense of tension/ },
+    { gravity: 'THEME', matcher: /strong sense of what this story is about/ },
     { gravity: null, matcher: /rich mix of ideas/ },
   ];
 
@@ -30,9 +30,17 @@ describe('openingMessageText (§9.1)', () => {
     expect(openingMessageText(gravity)).toMatch(matcher);
   });
 
-  it('falls back to the mixed-bag message for unexpected STORYLINE gravity', () => {
-    // STORYLINE shouldn't appear at this stage, but the fallback must not crash.
-    expect(openingMessageText('STORYLINE')).toMatch(/rich mix of ideas/);
+  it("THEME message asks about themes and feelings, not 'tension' or 'conflict'", () => {
+    const text = openingMessageText('THEME');
+    expect(text).toMatch(/themes and feelings/);
+    expect(text).not.toMatch(/conflict/i);
+    expect(text).not.toMatch(/tension/i);
+  });
+
+  it('null-gravity fallback references "what the story is about", not "a conflict"', () => {
+    const text = openingMessageText(null);
+    expect(text).toMatch(/what the story is about/);
+    expect(text).not.toMatch(/conflict/i);
   });
 });
 

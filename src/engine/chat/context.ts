@@ -106,12 +106,11 @@ export interface BuildDevelopmentContextInput {
   discoveryNotes: DiscoveryNote[];
   /**
    * Override which ConceptTypes are surfaced as "available" in the context.
-   * Defaults to the active dimension plus STORYLINE in Refinement contexts.
-   * Callers can pass a custom predicate (e.g. all dimensions) without
-   * touching the builder.
+   * Defaults to the active dimension. Callers can pass a custom predicate
+   * (e.g. all dimensions) without touching the builder.
    */
   includeConceptType?: (type: ConceptType) => boolean;
-  /** Phase the context is for. Defaults to DEVELOPMENT. Used to widen the conceptTypes filter for REFINEMENT. */
+  /** Phase the context is for. Defaults to DEVELOPMENT. Retained for callers that pass it explicitly; both Development and Refinement use the same filter (§3.2). */
   phase?: Phase;
 }
 
@@ -120,13 +119,13 @@ export interface BuildDevelopmentContextInput {
  *
  * Concepts are reduced to {type, value, dimension} so the model never sees
  * version history, IDs, or canvas positions — §3.2 calls these out as
- * unnecessary noise. ConceptTypes are filtered to the active dimension by
- * default (Development) and widened to active+STORYLINE for Refinement,
- * matching the "available types" semantics in §3.2 / §4.3.
+ * unnecessary noise. ConceptTypes are filtered to the active dimension —
+ * the same filter applies in Development and Refinement (§3.2). Callers who
+ * want all three dimensions surfaced (e.g. cross-dimension Refinement work)
+ * can pass `includeConceptType: () => true`.
  */
 export function buildDevelopmentContext(input: BuildDevelopmentContextInput): DevelopmentContext {
-  const phase = input.phase ?? 'DEVELOPMENT';
-  const includesByDefault = defaultConceptTypeFilter(input.activeDimension, phase);
+  const includesByDefault = defaultConceptTypeFilter(input.activeDimension);
   const filterFn = input.includeConceptType ?? includesByDefault;
 
   const typesById = new Map(input.conceptTypes.map((t) => [t.id, t]));
@@ -162,10 +161,7 @@ export function buildDevelopmentContext(input: BuildDevelopmentContextInput): De
   };
 }
 
-function defaultConceptTypeFilter(active: Dimension, phase: Phase): (type: ConceptType) => boolean {
-  if (phase === 'REFINEMENT' || phase === 'PRODUCTION') {
-    return (t) => t.dimension === active || t.dimension === 'STORYLINE';
-  }
+function defaultConceptTypeFilter(active: Dimension): (type: ConceptType) => boolean {
   return (t) => t.dimension === active;
 }
 

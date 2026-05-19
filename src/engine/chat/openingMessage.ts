@@ -8,7 +8,7 @@
  *
  *   CHARACTER → "Your Discovery notes had a lot of energy around a character — ..."
  *   WORLD     → "Your ideas paint a vivid world — ..."
- *   CONFLICT  → "There's a strong sense of tension in your notes — ..."
+ *   THEME     → "There's a strong sense of what this story is about in your notes — ..."
  *   null      → "You've got a rich mix of ideas from Discovery. Where would you like to start ..."
  *
  * The opening message is generated **once** and persisted as a normal
@@ -36,29 +36,25 @@ export type OpeningMessageGravity = Dimension | null;
  * Note: §9.1 examples use "her" — those are illustrative pronouns from the
  * spec's running example, not assumptions about the user's protagonist.
  */
-const OPENING_MESSAGES: Record<'WORLD' | 'CHARACTER' | 'CONFLICT' | 'NONE', string> = {
+const OPENING_MESSAGES: Record<'WORLD' | 'CHARACTER' | 'THEME' | 'NONE', string> = {
   CHARACTER:
     'Your Discovery notes had a lot of energy around a character — want to start exploring who she is?',
   WORLD:
     'Your ideas paint a vivid world — want to start defining where and when this story lives?',
-  CONFLICT:
-    "There's a strong sense of tension in your notes — want to dig into what's driving this conflict?",
+  THEME:
+    "There's a strong sense of what this story is about in your notes — want to dig into the themes and feelings driving it?",
   NONE:
-    "You've got a rich mix of ideas from Discovery. Where would you like to start — a character, a place, or a conflict?",
+    "You've got a rich mix of ideas from Discovery. Where would you like to start — a character, a place, or what the story is about?",
 };
 
 /**
- * Resolve the opening-message text for the given gravity.
- *
- * `STORYLINE` shouldn't appear during Discovery (per §13 Build Sequence —
- * Storyline emerges in Refinement), but if it ever does, fall back to the
- * mixed-bag message rather than throwing — the user gets a sensible prompt
- * instead of a crash.
+ * Resolve the opening-message text for the given gravity. Any unrecognized
+ * (or `null`) gravity falls back to the mixed-bag message.
  */
 export function openingMessageText(gravity: OpeningMessageGravity): string {
   if (gravity === 'CHARACTER') return OPENING_MESSAGES.CHARACTER;
   if (gravity === 'WORLD') return OPENING_MESSAGES.WORLD;
-  if (gravity === 'CONFLICT') return OPENING_MESSAGES.CONFLICT;
+  if (gravity === 'THEME') return OPENING_MESSAGES.THEME;
   return OPENING_MESSAGES.NONE;
 }
 

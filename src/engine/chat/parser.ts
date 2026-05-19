@@ -148,8 +148,7 @@ function readNotesArray(parsed: unknown): string[] | null {
 const VALID_DIMENSIONS: ReadonlySet<Dimension> = new Set([
   'WORLD',
   'CHARACTER',
-  'CONFLICT',
-  'STORYLINE',
+  'THEME',
 ]);
 
 export type EditType = 'REFINE' | 'RETHINK';
