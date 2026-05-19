@@ -313,7 +313,7 @@ export function createInsight(input: CreateInsightInput): Insight {
 }
 
 // --- New project bundle ---
-// A freshly created project always ships with one PhaseState and the 41 default
+// A freshly created project always ships with one PhaseState and the 29 default
 // ConceptTypes seeded (Spec_DataPersistence.md §6, Spec_DataModel.md §16).
 
 export interface InitializeProjectInput {

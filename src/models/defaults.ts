@@ -1,9 +1,9 @@
 /**
  * Default ConceptType definitions.
  *
- * Seeded into every new project. 41 total: 11 World + 13 Character + 9 Conflict + 8 Storyline.
+ * Seeded into every new project. 29 total: 11 World + 13 Character + 5 Theme.
  *
- * Source of truth: docs/foundation/Spec_DataModel.md §14.
+ * Source of truth: docs/foundation/Spec_DataModel.md §14 (v0.3).
  */
 
 import type { Dimension } from './types';
@@ -44,24 +44,10 @@ export const DEFAULT_CONCEPT_TYPES: readonly DefaultConceptTypeDef[] = [
   { codeKey: 'relationshipRole', label: 'Relationship Role', description: 'How they relate to other characters', dimension: 'CHARACTER' },
   { codeKey: 'background', label: 'Background', description: 'Origin story, key life events', dimension: 'CHARACTER' },
 
-  // Conflict (9)
-  { codeKey: 'centralConflict', label: 'Central Conflict', description: 'The core tension driving the story', dimension: 'CONFLICT' },
-  { codeKey: 'internalConflict', label: 'Internal Conflict', description: 'Tension within a character', dimension: 'CONFLICT' },
-  { codeKey: 'interpersonalConflict', label: 'Interpersonal Conflict', description: 'Tension between characters', dimension: 'CONFLICT' },
-  { codeKey: 'societalConflict', label: 'Societal Conflict', description: 'Tension between characters and the world', dimension: 'CONFLICT' },
-  { codeKey: 'stakes', label: 'Stakes', description: "What's at risk", dimension: 'CONFLICT' },
-  { codeKey: 'catalyst', label: 'Catalyst', description: 'What sets the conflict in motion', dimension: 'CONFLICT' },
-  { codeKey: 'escalation', label: 'Escalation', description: 'How tension increases over time', dimension: 'CONFLICT' },
-  { codeKey: 'theme', label: 'Theme', description: 'The abstract ideas the story explores', dimension: 'CONFLICT' },
-  { codeKey: 'subtext', label: 'Subtext', description: "What's being said beneath the surface", dimension: 'CONFLICT' },
-
-  // Storyline (8) — available in Refinement
-  { codeKey: 'storyArc', label: 'Story Arc', description: 'The macro shape of the narrative', dimension: 'STORYLINE' },
-  { codeKey: 'plot', label: 'Plot', description: 'The sequence of major events', dimension: 'STORYLINE' },
-  { codeKey: 'plotTwist', label: 'Plot Twist', description: 'Surprising revelations or reversals', dimension: 'STORYLINE' },
-  { codeKey: 'subPlot', label: 'Sub-plot', description: 'Secondary narrative threads', dimension: 'STORYLINE' },
-  { codeKey: 'conflictType', label: 'Conflict Type', description: 'The nature of the central tension (synthesis of Conflict dimension)', dimension: 'STORYLINE' },
-  { codeKey: 'tone', label: 'Tone', description: 'The narrative voice and feel', dimension: 'STORYLINE' },
-  { codeKey: 'pacing', label: 'Pacing', description: 'How time moves in the story', dimension: 'STORYLINE' },
-  { codeKey: 'narrativePov', label: 'Narrative POV', description: 'Whose perspective the story is told from', dimension: 'STORYLINE' },
+  // Theme (5)
+  { codeKey: 'theme', label: 'Theme', description: 'The abstract ideas the story explores — freedom vs. duty, the cost of truth, identity', dimension: 'THEME' },
+  { codeKey: 'tone', label: 'Tone', description: 'The narrative voice and emotional register — darkly comic, melancholy, hopeful, tense', dimension: 'THEME' },
+  { codeKey: 'subtext', label: 'Subtext', description: "What's being said beneath the surface of scenes, dialogue, and relationships", dimension: 'THEME' },
+  { codeKey: 'motifSymbol', label: 'Motif / Symbol', description: 'Recurring images, objects, or patterns that carry meaning — the locked gate, seasonal decay', dimension: 'THEME' },
+  { codeKey: 'stakes', label: 'Stakes', description: "What's at risk — the family estate, a relationship, someone's sense of self", dimension: 'THEME' },
 ] as const;

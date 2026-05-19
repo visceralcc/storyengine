@@ -126,13 +126,12 @@ describe('createConceptType', () => {
 });
 
 describe('seedDefaultConceptTypes', () => {
-  it('seeds exactly 41 defaults split 11 World + 13 Character + 9 Conflict + 8 Storyline', () => {
+  it('seeds exactly 29 defaults split 11 World + 13 Character + 5 Theme', () => {
     const types = seedDefaultConceptTypes('proj_a');
-    expect(types).toHaveLength(41);
+    expect(types).toHaveLength(29);
     expect(types.filter((t) => t.dimension === 'WORLD')).toHaveLength(11);
     expect(types.filter((t) => t.dimension === 'CHARACTER')).toHaveLength(13);
-    expect(types.filter((t) => t.dimension === 'CONFLICT')).toHaveLength(9);
-    expect(types.filter((t) => t.dimension === 'STORYLINE')).toHaveLength(8);
+    expect(types.filter((t) => t.dimension === 'THEME')).toHaveLength(5);
     expect(types.every((t) => t.isDefault)).toBe(true);
     expect(types.every((t) => t.projectId === 'proj_a')).toBe(true);
   });
@@ -144,6 +143,15 @@ describe('seedDefaultConceptTypes', () => {
     for (const def of DEFAULT_CONCEPT_TYPES) {
       expect(labels).toContain(def.label);
     }
+  });
+
+  it('seeds the five Theme ConceptTypes (Theme, Tone, Subtext, Motif / Symbol, Stakes)', () => {
+    const types = seedDefaultConceptTypes('proj_a');
+    const themeLabels = types.filter((t) => t.dimension === 'THEME').map((t) => t.label);
+    expect(themeLabels).toEqual(
+      expect.arrayContaining(['Theme', 'Tone', 'Subtext', 'Motif / Symbol', 'Stakes']),
+    );
+    expect(themeLabels).toHaveLength(5);
   });
 });
 
@@ -259,13 +267,13 @@ describe('createInsight', () => {
 });
 
 describe('initializeProject', () => {
-  it('returns a project in DISCOVERY phase with one PhaseState and 41 default ConceptTypes', () => {
+  it('returns a project in DISCOVERY phase with one PhaseState and 29 default ConceptTypes', () => {
     const bundle = initializeProject({ name: '1820s France Story' });
     expect(bundle.project.currentPhase).toBe('DISCOVERY');
     expectId(bundle.project.id, 'proj');
     expect(bundle.phaseState.projectId).toBe(bundle.project.id);
     expect(bundle.phaseState.discovery.status).toBe('IN_PROGRESS');
-    expect(bundle.conceptTypes).toHaveLength(41);
+    expect(bundle.conceptTypes).toHaveLength(29);
     expect(bundle.conceptTypes.every((t) => t.projectId === bundle.project.id)).toBe(true);
     expect(bundle.conceptTypes.every((t) => t.isDefault)).toBe(true);
   });

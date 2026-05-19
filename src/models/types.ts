@@ -4,13 +4,13 @@
  * Plain-object interfaces and string-literal enums for every entity in the system.
  * No classes, no methods, no prototypes — pure data so JSON serialization is trivial.
  *
- * Source of truth: docs/foundation/Spec_DataModel.md (v0.2) and the GapAnalysis
+ * Source of truth: docs/foundation/Spec_DataModel.md (v0.3) and the GapAnalysis
  * additions defined in docs/discovery/Spec_DiscoveryEngine.md §10.
  */
 
 // --- Enums ---
 
-export type Dimension = 'WORLD' | 'CHARACTER' | 'CONFLICT' | 'STORYLINE';
+export type Dimension = 'WORLD' | 'CHARACTER' | 'THEME';
 
 export type Phase = 'DISCOVERY' | 'DEVELOPMENT' | 'REFINEMENT' | 'PRODUCTION';
 
