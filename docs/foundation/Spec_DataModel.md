@@ -2,7 +2,7 @@
 
 **Systems Design & Data Architecture**
 
-Version 0.2 | May 2026 | Spec
+Version 0.3 | May 2026 | Spec
 
 **CONFIDENTIAL**
 
@@ -13,6 +13,7 @@ Version 0.2 | May 2026 | Spec
 |---------|------|---------|
 | 0.1 | Apr 2026 | Initial draft. 7 entities, 35 default ConceptTypes, Builder enum, ID strategy, relationship graph. |
 | **0.2** | **May 2026** | **Revised for PRD v0.3 pipeline model. Builder enum replaced by Dimension enum + Phase enum. Two new entities: DiscoveryNote and PhaseState. Default ConceptTypes reorganized: 11 World + 13 Character + 9 Conflict + 8 Storyline (41 total, up from 35). ChatMessage scoped by phase instead of builder. Project entity updated: `initialBuilder` removed, `currentPhase` added.** |
+| **0.3** | **May 2026** | **Dimension rename: Conflict → Theme, Storyline dimension removed. Dimension enum now three values: WORLD \| CHARACTER \| THEME. Default ConceptTypes revised: 11 World + 13 Character + 5 Theme (29 total, down from 41). Nine Conflict types and eight Storyline types removed — Conflict types become Development-phase AI conversational tools, Storyline types move to the Refinement beat framework (future spec). New Theme types: Theme, Tone, Subtext, Motif / Symbol, Stakes. See Phase_Architecture.md for the full rationale.** |
 
 ---
 
@@ -60,20 +61,19 @@ Every entity has a unique `id` field using a **prefixed nanoid** format:
 
 ### Dimension
 
-Replaces the v0.1 `Builder` enum. Represents which creative dimension a Concept or ConceptType belongs to.
+Represents which creative dimension a Concept or ConceptType belongs to. Three dimensions capture the full creative space: the people in the story (Character), the world they inhabit (World), and the meaning layer — what the story is about and how it feels (Theme).
 
 ```typescript
-type Dimension = "WORLD" | "CHARACTER" | "CONFLICT" | "STORYLINE";
+type Dimension = "WORLD" | "CHARACTER" | "THEME";
 ```
 
-| Code Value | Display Label | Phase Context |
-|------------|--------------|---------------|
-| `WORLD` | World | Available in Development + Refinement |
-| `CHARACTER` | Character | Available in Development + Refinement |
-| `CONFLICT` | Conflict | Available in Development. In Refinement, Conflict concepts persist but new Storyline types are added. |
-| `STORYLINE` | Storyline | Available in Refinement only. These types emerge when conflict gets shaped into narrative structure. |
+| Code Value | Display Label | Description |
+|------------|--------------|-------------|
+| `WORLD` | World | Where and when the story exists — places, time periods, environments, social structures, visual style |
+| `CHARACTER` | Character | Who is in the story — appearance, personality, behavior, relationships, motivations |
+| `THEME` | Theme | What the story is about and how it feels — thematic ideas, tone, subtext, motifs, stakes |
 
-**Why four values instead of three:** "Conflict" and "Storyline" represent different levels of structure on the same creative material. During Development, the user explores tensions and stakes (Conflict). During Refinement, those tensions get shaped into narrative arcs, beats, and pacing (Storyline). The data model distinguishes them so the workspace can show the right Concept Types at the right phase.
+**Why three dimensions, not four:** The original v0.2 model had four dimensions (World, Character, Conflict, Storyline). Through design exploration documented in `Phase_Architecture.md`, Conflict was found to be a subset of a larger category — one mechanism among many that expresses what a story is about. Theme captures the full authorial intent layer. Conflict becomes a conversational lens the AI uses during Development (see `Phase_Architecture.md` §6). Storyline types (Story Arc, Plot, Pacing, etc.) move to the Refinement beat framework — a structural system distinct from the ConceptType card model (beat framework spec TBD).
 
 ### Phase
 
@@ -96,7 +96,7 @@ type Phase = "DISCOVERY" | "DEVELOPMENT" | "REFINEMENT" | "PRODUCTION";
 type InsightType = "SUGGESTION" | "CONNECTION" | "CONFLICT";
 ```
 
-Note: `CONFLICT` as an InsightType (a contradiction between concepts) is different from `CONFLICT` as a Dimension (the creative dimension of tensions/stakes). Context always disambiguates — InsightType appears only on Insight entities, Dimension appears on Concepts and ConceptTypes.
+Note: `CONFLICT` as an InsightType (a contradiction between concepts) is unrelated to the former "Conflict" dimension (renamed to Theme in v0.3). No namespace collision exists.
 
 ### InsightStatus
 
@@ -152,7 +152,7 @@ interface Project {
 |--------|-------------|---------------|
 | PhaseState | One per project | 1 |
 | DiscoveryNote | Created during Discovery | 10s to 100s |
-| ConceptType | Seeded on creation + user/AI additions | 41 defaults + custom |
+| ConceptType | Seeded on creation + user/AI additions | 29 defaults + custom |
 | Concept | Created via chat or manually | 10s to 100s |
 | ConceptVersion | At least 1 per Concept | 1–5 per Concept |
 | ChatMessage | Appended during conversation | 10s to 100s per phase |
@@ -234,7 +234,7 @@ interface DiscoveryNote {
 
 ## 7. Entity: ConceptType
 
-A labeled category representing a dimension of a World, Character, Conflict, or Storyline. "Time Period", "Fashion Style", and "Central Conflict" are all Concept Types.
+A labeled category representing a dimension of a World, Character, or Theme. "Time Period", "Fashion Style", and "Tone" are all Concept Types.
 
 ### Fields
 
@@ -244,7 +244,7 @@ interface ConceptType {
   projectId: string;             // proj_[nanoid] — which project
   label: string;                 // display name, Title Case with spaces (e.g., "Time Period")
   description: string;           // brief explanation of what this type captures
-  dimension: Dimension;          // WORLD | CHARACTER | CONFLICT | STORYLINE
+  dimension: Dimension;          // WORLD | CHARACTER | THEME
   isDefault: boolean;            // true if built-in, false if user/AI-created
   createdAt: string;             // ISO 8601 timestamp
 }
@@ -252,7 +252,7 @@ interface ConceptType {
 
 ### Key behaviors
 
-- **Default types are seeded per project.** When a new project is created, the default Concept Types for all four dimensions are generated and stored. See §14 for the full list.
+- **Default types are seeded per project.** When a new project is created, the default Concept Types for all three dimensions are generated and stored. See §14 for the full list.
 - **Default and custom types are identical in behavior.** The `isDefault` flag is metadata for potential future features (like "reset to defaults"). It does not affect how the type works. This enforces HARD_RULES: "Concept Types are first-class."
 - **The label field is the display name.** It appears on card headers, in export files, and in MCP Server responses. Always Title Case with spaces.
 - **Concept Types are scoped to a project.** Two different projects can each have a "Time Period" type — they are separate entities with separate IDs.
@@ -272,7 +272,7 @@ interface Concept {
   id: string;                    // con_[nanoid] — unique identifier
   projectId: string;             // proj_[nanoid] — which project
   conceptTypeId: string;         // ctype_[nanoid] — which ConceptType this is an instance of
-  dimension: Dimension;          // WORLD | CHARACTER | CONFLICT | STORYLINE
+  dimension: Dimension;          // WORLD | CHARACTER | THEME
   currentVersionId: string;      // ver_[nanoid] — points to the active version
   versions: ConceptVersion[];    // all versions, ordered by versionNumber ascending
   relatedConceptIds: string[];   // con_[nanoid] IDs of related concepts (co-extracted, cross-dimension links)
@@ -468,7 +468,7 @@ interface Insight {
 
 ## 14. Default ConceptType Definitions
 
-When a new project is created, the following default ConceptTypes are seeded. **41 defaults total:** 11 World + 13 Character + 9 Conflict + 8 Storyline.
+When a new project is created, the following default ConceptTypes are seeded. **29 defaults total:** 11 World + 13 Character + 5 Theme.
 
 ### World Dimension (11 defaults)
 
@@ -504,36 +504,25 @@ When a new project is created, the following default ConceptTypes are seeded. **
 | Relationship Role | How they relate to other characters | `relationshipRole` |
 | Background | Origin story, key life events | `background` |
 
-### Conflict Dimension (9 defaults)
+### Theme Dimension (5 defaults)
 
-These are available during Development and persist into Refinement.
-
-| Label | Description | Code Key |
-|-------|------------|----------|
-| Central Conflict | The core tension driving the story | `centralConflict` |
-| Internal Conflict | Tension within a character | `internalConflict` |
-| Interpersonal Conflict | Tension between characters | `interpersonalConflict` |
-| Societal Conflict | Tension between characters and the world | `societalConflict` |
-| Stakes | What's at risk | `stakes` |
-| Catalyst | What sets the conflict in motion | `catalyst` |
-| Escalation | How tension increases over time | `escalation` |
-| Theme | The abstract ideas the story explores | `theme` |
-| Subtext | What's being said beneath the surface | `subtext` |
-
-### Storyline Dimension (8 defaults)
-
-These are added to the workspace when the user enters Refinement. They represent the narrative structure that shapes raw conflict into story.
+Theme captures the authorial intent layer — what the story is about beneath the surface, how it feels, and what patterns carry meaning. These ConceptTypes are available during Development and persist into Refinement.
 
 | Label | Description | Code Key |
 |-------|------------|----------|
-| Story Arc | The macro shape of the narrative | `storyArc` |
-| Plot | The sequence of major events | `plot` |
-| Plot Twist | Surprising revelations or reversals | `plotTwist` |
-| Sub-plot | Secondary narrative threads | `subPlot` |
-| Conflict Type | The nature of the central tension (synthesis of Conflict dimension) | `conflictType` |
-| Tone | The narrative voice and feel | `tone` |
-| Pacing | How time moves in the story | `pacing` |
-| Narrative POV | Whose perspective the story is told from | `narrativePov` |
+| Theme | The abstract ideas the story explores — freedom vs. duty, the cost of truth, identity | `theme` |
+| Tone | The narrative voice and emotional register — darkly comic, melancholy, hopeful, tense | `tone` |
+| Subtext | What's being said beneath the surface of scenes, dialogue, and relationships | `subtext` |
+| Motif / Symbol | Recurring images, objects, or patterns that carry meaning — the locked gate, seasonal decay | `motifSymbol` |
+| Stakes | What's at risk — the family estate, a relationship, someone's sense of self | `stakes` |
+
+### Removed from defaults (v0.3)
+
+The following types from v0.2 are no longer seeded as ConceptTypes. They have been reassigned to other roles per `Phase_Architecture.md`:
+
+**Former Conflict dimension (9 types) → Development-phase AI conversational tools.** The four conflict types (Central Conflict, Internal Conflict, Interpersonal Conflict, Societal Conflict) plus Catalyst and Escalation become lenses the AI uses to ask probing questions during Development. Stakes moves to the Theme dimension as a ConceptType. Theme and Subtext move to the Theme dimension as ConceptTypes.
+
+**Former Storyline dimension (8 types) → Refinement beat framework.** Story Arc, Plot, Plot Twist, Sub-plot, Pacing, and Narrative POV become structural tools within the Refinement beat framework (beat data model spec TBD). Tone moves to the Theme dimension as a ConceptType. Conflict Type is deprecated (redundant with the Conflict conversational lens).
 
 ---
 
@@ -546,7 +535,7 @@ These rules apply across the entire data model and cannot be overridden by indiv
 3. **No circular references.** Entities reference each other by ID string only. The relationship graph is fully serializable as flat JSON.
 4. **IDs are strings, always prefixed.** Never numeric, never UUID, never bare nanoid. The prefix is part of the ID.
 5. **A new Concept must always have exactly one ConceptVersion.** Concept creation and first-version creation are atomic.
-6. **Enum values use SCREAMING_SNAKE_CASE.** `WORLD`, `CHARACTER`, `CONFLICT`, `STORYLINE`, `DISCOVERY`, `DEVELOPMENT`, `REFINEMENT`, `PRODUCTION`, `SUGGESTION`, `CONNECTION`, `CONFLICT` (insight type), `PENDING`, `ACCEPTED`, `DISMISSED`, `GENERATED`, `UPLOADED`.
+6. **Enum values use SCREAMING_SNAKE_CASE.** `WORLD`, `CHARACTER`, `THEME`, `DISCOVERY`, `DEVELOPMENT`, `REFINEMENT`, `PRODUCTION`, `SUGGESTION`, `CONNECTION`, `CONFLICT` (insight type), `PENDING`, `ACCEPTED`, `DISMISSED`, `GENERATED`, `UPLOADED`.
 7. **Object keys use camelCase.** `projectId`, `conceptTypeId`, `versionNumber`, `relatedConceptIds`.
 
 ---
@@ -555,7 +544,7 @@ These rules apply across the entire data model and cannot be overridden by indiv
 
 ### Creation edge cases
 
-- **Empty project:** A newly created project has 41 default ConceptTypes, one PhaseState, zero DiscoveryNotes, zero Concepts, zero ChatMessages, zero Images, zero Insights. This is a valid state.
+- **Empty project:** A newly created project has 29 default ConceptTypes, one PhaseState, zero DiscoveryNotes, zero Concepts, zero ChatMessages, zero Images, zero Insights. This is a valid state.
 - **Concept with no image:** Valid and expected. Most concepts start without images.
 - **Concept created manually (not via chat):** Valid. The `sourceMessageId` is null.
 - **ConceptType with no Concepts:** Valid. Default types exist before any concepts are created.
@@ -578,7 +567,6 @@ These rules apply across the entire data model and cannot be overridden by indiv
 
 - **DiscoveryNotes are only created during the Discovery phase.** If the user returns to Discovery from Development, they can add new notes.
 - **Concepts are only created during Development or Refinement.** The system never auto-creates Concepts from DiscoveryNotes — the AI references note content but concept creation is explicit.
-- **Storyline ConceptTypes are only available in Refinement.** The workspace shows World + Character + Conflict types in Development, and adds Storyline types when the user enters Refinement.
 - **Phase regression is allowed.** Moving backward from Development to Discovery, or from Refinement to Development, is a valid operation. The data from later phases is preserved — it's not deleted on regression.
 
 ---
@@ -610,7 +598,7 @@ All interfaces consolidated for quick reference:
 ```typescript
 // --- Enums ---
 
-type Dimension = "WORLD" | "CHARACTER" | "CONFLICT" | "STORYLINE";
+type Dimension = "WORLD" | "CHARACTER" | "THEME";
 type Phase = "DISCOVERY" | "DEVELOPMENT" | "REFINEMENT" | "PRODUCTION";
 type InsightType = "SUGGESTION" | "CONNECTION" | "CONFLICT";
 type InsightStatus = "PENDING" | "ACCEPTED" | "DISMISSED";
@@ -744,7 +732,7 @@ interface Insight {
    - IDs use correct prefixes (including new `dnote_` and `phase_` prefixes)
    - Timestamps are valid ISO 8601
    - A new Concept always has exactly one ConceptVersion
-   - A new Project has 41 default ConceptTypes and one PhaseState with `currentPhase: DISCOVERY`
+   - A new Project has 29 default ConceptTypes and one PhaseState with `currentPhase: DISCOVERY`
 
 ### Phase 2 — Relationship helpers
 
@@ -762,9 +750,9 @@ interface Insight {
 
 ### Phase 3 — Default ConceptType seeding
 
-1. Create the default ConceptType data for all four dimensions (41 types total)
+1. Create the default ConceptType data for all three dimensions (29 types total)
 2. Implement `seedDefaultConceptTypes(projectId)` that generates all defaults
-3. Write tests verifying: correct count per dimension (11+13+9+8), all labels unique within a dimension, all have `isDefault: true`
+3. Write tests verifying: correct count per dimension (11+13+5), all labels unique within a dimension, all have `isDefault: true`
 
 ### Phase 4 — Phase state management
 
@@ -782,7 +770,7 @@ interface Insight {
 
 3. **DiscoveryCluster entity ownership:** Currently, clusters are nested inside PhaseState rather than being top-level entities. If consolidation becomes complex (dozens of clusters with metadata), this might warrant promoting DiscoveryCluster to a full entity with its own ID prefix. To be resolved when writing `Spec_DiscoveryEngine.md`.
 
-4. **Conflict vs. CONFLICT namespace collision:** The `CONFLICT` value appears in both the Dimension enum and the InsightType enum. This is intentional and context always disambiguates, but if it causes confusion in implementation, one could be renamed (e.g., InsightType `CONTRADICTION`). To be resolved during implementation if needed.
+4. ~~**Conflict vs. CONFLICT namespace collision:**~~ Resolved in v0.3 — Conflict is no longer a Dimension value. `CONFLICT` only appears in the InsightType enum.
 
 ---
 
@@ -818,7 +806,8 @@ Key constraints:
 - All timestamps are ISO 8601 strings, never Date objects (§15)
 - No circular references — entities reference each other by ID string only (§15)
 - A new Concept MUST always have exactly one ConceptVersion (§8)
-- A new Project starts in DISCOVERY phase with 41 default ConceptTypes and one PhaseState (§4, §5)
+- A new Project starts in DISCOVERY phase with 29 default ConceptTypes (11 World + 13 Character + 5 Theme) and one PhaseState (§4, §5)
+- Dimension enum is WORLD | CHARACTER | THEME (three values, not four) (§3)
 - Use the nanoid npm package for ID generation
 
 Start with: Phase 1 — define all TypeScript interfaces and enums in src/models/types.ts

@@ -34,20 +34,20 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 | Heading | Barlow | 600 (SemiBold) | 24pt–36pt |
 | Subheading | Barlow | 500 (Medium) | 18pt–20pt |
 | Label / Category | Barlow | 500 (Medium) | 12pt–14pt |
-| Body | Domine | 400 (Regular) | 14pt–16pt |
-| Body Emphasis | Domine | 700 (Bold) | 14pt–16pt |
-| Caption | Domine | 400 (Regular) | 12pt |
+| Body | Aleo | 400 (Regular) | 14pt–16pt |
+| Body Emphasis | Aleo | 700 (Bold) | 14pt–16pt |
+| Caption | Aleo | 400 (Regular) | 12pt |
 
 **Type rules:**
 - Minimum type size: **12pt** — nothing smaller, ever
 - Maximum type size: **36pt** — nothing larger, ever
 - Barlow is for **structure** (headings, labels, navigation, card type labels)
-- Domine is for **content** (descriptions, chat messages, concept values, body text)
+- Aleo is for **content** (descriptions, chat messages, concept values, body text)
 - Never mix both fonts in the same line of text
 - Concept Type labels always render in Barlow, Title Case with spaces
-- Concept values always render in Domine
+- Concept values always render in Aleo
 
-**Font sources:** Both from Google Fonts (Barlow + Domine). Load via Expo's font loading system. **Note on Domine:** Domine ships without italic variants — any italic reference in specs renders as `Domine_400Regular` (upright) until/unless italic-capable fallback is added.
+**Font sources:** Both from Google Fonts (Barlow + Aleo). Load via Expo's font loading system. Aleo ships with Regular, Italic, and Bold variants (all loaded in `app/_layout.tsx`).
 
 ---
 
@@ -129,5 +129,5 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 
 - **Design file:** None yet — visual design is driven by this document and the PRD
 - **Icon set:** [TBD — to be chosen before Phase C]
-- **Font source:** Google Fonts (Barlow, Domine)
+- **Font source:** Google Fonts (Barlow, Aleo)
 - **Token source of truth:** This file (`docs/design/DESIGN.md`) until a code-level theme file is created

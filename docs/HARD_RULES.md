@@ -21,7 +21,7 @@ Non-negotiable constraints that apply across all specs and all implementation. C
 | Color palette | White (#FFFFFF), Light Gray (#F5F5F5, #E8E8E8), Dark text (#1A1A1A) |
 | Corner radius | Minimum 4px, maximum 12px — no sharp corners, no circles |
 | Heading font | Barlow (Google Fonts) |
-| Body font | Domine (Google Fonts slab serif) |
+| Body font | Aleo (Google Fonts slab serif) |
 | Minimum type size | 12pt — nothing smaller, ever |
 | Maximum type size | 36pt — nothing larger, ever |
 | Overall feel | Clean, editorial, sketchbook-like — not a spreadsheet, not a dashboard tool |
@@ -32,9 +32,10 @@ Non-negotiable constraints that apply across all specs and all implementation. C
 
 - **Four phases, not three Builders.** The creative pipeline is Discovery → Development → Refinement → Production Handoff. There are no separate "Builder" screens.
 - **Phases are not gates.** Users can move backward and forward freely between phases. The tool adapts its behavior to the current phase, but never locks the user out of a previous phase.
-- **Dimensions, not destinations.** Character, World, and Conflict are creative dimensions within a unified workspace — not separate screens to navigate between. The AI tracks which dimension is active.
+- **Dimensions, not destinations.** Character, World, and Theme are creative dimensions within a unified workspace — not separate screens to navigate between. The AI tracks which dimension is active.
 - **Phase-appropriate structure.** No Concept Type cards during Discovery (too early). Cards emerge during Development. Cards are the primary surface during Refinement. Never impose structure before the user is ready.
-- **Conflict → Storyline progression.** The third dimension is "Conflict" during Development (tensions driving the story). In Refinement, conflict shapes into "Storyline" (arc, beats, plot, pacing). These are the same material at different levels of structure.
+- **Theme captures authorial intent.** Theme is the meaning layer — what the story is about, how it feels, its tone, subtext, motifs, and stakes. Conflict is a conversational lens the AI uses during Development, not a top-level dimension.
+- **Storyline lives in the Refinement beat framework.** Story Arc, Plot, Pacing, Narrative POV, and other structural tools are part of the Refinement beat system — not ConceptType cards.
 
 ---
 
@@ -81,10 +82,11 @@ These terms from v0.2 are no longer used. If they appear in existing specs, they
 
 | Deprecated term | Replacement | Reason |
 |----------------|-------------|--------|
-| Builder | Dimension (for World/Character/Conflict) or Phase (for pipeline stages) | Builders were separate screens; dimensions are lenses within a unified workspace |
+| Builder | Dimension (for World/Character/Theme) or Phase (for pipeline stages) | Builders were separate screens; dimensions are lenses within a unified workspace |
 | World Builder | World dimension | Not a separate screen |
 | Character Builder | Character dimension | Not a separate screen |
-| Storyline Builder | Conflict dimension (Development) / Storyline (Refinement) | Reframed as tension-first in Development |
+| Storyline Builder | Theme dimension (Development) / Refinement beat framework (Refinement) | Reframed: Theme captures authorial intent; Storyline structure lives in Refinement beats |
+| Conflict dimension | Theme dimension + AI conversational lens | Conflict is a subset of Theme; the AI uses conflict as a Development-phase lens |
 | Builder origin | Dimension | Same concept, new name |
 | "Start New World/Character/Storyline" | "Start New Story" | Discovery phase handles creative entry point |
 

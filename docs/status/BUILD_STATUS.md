@@ -72,7 +72,12 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Unified workspace | Character/World/Conflict are dimensions, not separate screens | PRD v0.3 |
 | Conflict vs. Storyline | "Conflict" in Development, shapes into "Storyline" in Refinement | PRD v0.3 |
 | Phase-appropriate cards | No cards in Discovery; emerge in Development; primary surface in Refinement | PRD v0.3 |
-| 41 default ConceptTypes | 11 World + 13 Character + 9 Conflict + 8 Storyline, seeded per project | DataModel v0.2 |
+| 41 default ConceptTypes | ~~11 World + 13 Character + 9 Conflict + 8 Storyline, seeded per project~~ Superseded by v0.3 | DataModel v0.2 |
+| Three creative dimensions | Character, World, Theme (replaces Character, World, Conflict/Storyline) | Phase_Architecture v0.1, DataModel v0.3 |
+| 29 default ConceptTypes | 11 World + 13 Character + 5 Theme, seeded per project | DataModel v0.3 |
+| Conflict as AI lens | Conflict types (Central, Internal, Interpersonal, Societal, Catalyst, Escalation) become Development-phase conversational tools, not ConceptTypes | DataModel v0.3, Phase_Architecture v0.1 |
+| Storyline as beat framework | Story Arc, Plot, Pacing, Narrative POV etc. move to Refinement beat framework (spec TBD), not ConceptTypes | DataModel v0.3, Phase_Architecture v0.1 |
+| Theme ConceptTypes | Theme, Tone, Subtext, Motif / Symbol, Stakes | DataModel v0.3 |
 | Spatial Discovery canvas | Unbounded 2D canvas, notes placed at x/y coordinates, no grid | DiscoveryEngine v0.1 |
 | Dual input paths | Manual note placement + AI stream-of-consciousness extraction | DiscoveryEngine v0.1 |
 | User-initiated consolidation | "Consolidate Ideas" button, minimum 3 notes, AI groups into labeled clusters | DiscoveryEngine v0.1 |
@@ -100,7 +105,7 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 
 ## Data Model Additions Pending
 
-The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMapping` interfaces and extends `PhaseState.discovery` with a `gapAnalysis` field. The Discovery Design spec (v0.1) introduces `NoteColor` type and adds `color: NoteColor` to the `DiscoveryNote` interface. Both additions need to be incorporated into `Spec_DataModel.md` in a v0.3 revision.
+The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMapping` interfaces and extends `PhaseState.discovery` with a `gapAnalysis` field. The Discovery Design spec (v0.1) introduces `NoteColor` type and adds `color: NoteColor` to the `DiscoveryNote` interface. Both additions need to be incorporated into `Spec_DataModel.md` in a future revision. (The v0.3 revision addressed Dimension/ConceptType changes only.)
 
 ---
 
@@ -120,12 +125,12 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | `OVERVIEW.md` | Companion | ✅ Updated for v0.3 |
 | `Templates_SpecDocs.md` | Templates | ✅ Complete (v0.1) |
 | `Structure_Map.md` | Structure | ✅ Complete (v0.2) |
-| `foundation/Spec_DataModel.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) — needs v0.3 for GapAnalysis + NoteColor additions |
+| foundation/Spec_DataModel.md | Tech Spec (Level 2) | ✅ Complete (v0.3) |
 | `foundation/Spec_DataPersistence.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
 | `foundation/Spec_Navigation.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
 | `discovery/Spec_DiscoveryEngine.md` | Tech Spec (Level 2) | ✅ Complete (v0.1) |
 | `discovery/Spec_Discovery_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
-| `chat-engine/Spec_ChatEngine.md` | Tech Spec (Level 2) | ✅ Complete (v0.1) |
+| `chat-engine/Spec_ChatEngine.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
 | `start-screen/Spec_SplashScreen_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 | `start-screen/Spec_ProjectChooser_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 | `start-screen/Spec_StepMenu_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
@@ -177,7 +182,9 @@ Tests: 189 passing (20 model, 16 canvas, 28 persistence, 125 chat).
 
 ## What's Next
 
-**Immediate next step:** Chat Engine pipeline is complete — switch to UI wire-up. Connect the Discovery chat panel (`app/project/[projectId]/discovery.tsx`) to `createChatClient` + `parseDiscoveryResponse` + `extractDiscoveryNotes` so notes can be extracted from chat in the running app. Discovery Engine Phases 2–5 (chat-driven extraction → consolidation → gap analysis → re-consolidation) become unblocked. `Spec_Workspace_Design.md` (Phase D, Order 8) is the next pending Design Spec — needed before Development / Refinement chat surfaces can be built.
+**Immediate next step:** Revise the Workspace Figma design before writing `Spec_Workspace_Design.md` (Phase D, Order 8). The current Figma screen (node `69:53`) shows the Development shell but needs design decisions for dimension switching, concept card layout, phase transition controls, and RETHINK confirmation UX before the spec can be written. Charlie is revising the design — spec writing resumes after that.
+
+**Also pending:** Wire up the Discovery chat panel (`app/project/[projectId]/discovery.tsx`) to `createChatClient` + `parseDiscoveryResponse` + `extractDiscoveryNotes` so notes can be extracted from chat in the running app. Discovery Engine Phases 2–5 (chat-driven extraction → consolidation → gap analysis → re-consolidation) become unblocked.
 
 **Companion doc updates still pending:** DataModel needs v0.3 revision to roll up the in-code NoteColor type and the GapAnalysis interfaces from Discovery_Design v0.1 / DiscoveryEngine v0.1.
 
