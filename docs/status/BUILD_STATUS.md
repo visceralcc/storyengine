@@ -176,7 +176,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | Chat Engine | 6 — Gap-aware conversation | ✅ Complete | `src/engine/chat/openingMessage.ts` + integration tests in `__tests__/gapAware.test.ts` (gap-analysis wiring already shipped in Phase 2) |
 | Chat Engine | 7 — Refinement chat integration | ✅ Complete | End-to-end integration tests in `__tests__/refinementChat.test.ts` (prompt + Storyline context widening already shipped in Phase 2) |
 
-Tests: 189 passing (20 model, 16 canvas, 28 persistence, 125 chat).
+Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
 ---
 
@@ -184,8 +184,18 @@ Tests: 189 passing (20 model, 16 canvas, 28 persistence, 125 chat).
 
 **Immediate next step:** Revise the Workspace Figma design before writing `Spec_Workspace_Design.md` (Phase D, Order 8). The current Figma screen (node `69:53`) shows the Development shell but needs design decisions for dimension switching, concept card layout, phase transition controls, and RETHINK confirmation UX before the spec can be written. Charlie is revising the design — spec writing resumes after that.
 
-**Also pending:** Wire up the Discovery chat panel (`app/project/[projectId]/discovery.tsx`) to `createChatClient` + `parseDiscoveryResponse` + `extractDiscoveryNotes` so notes can be extracted from chat in the running app. Discovery Engine Phases 2–5 (chat-driven extraction → consolidation → gap analysis → re-consolidation) become unblocked.
+**Also pending:**
 
-**Companion doc updates still pending:** DataModel needs v0.3 revision to roll up the in-code NoteColor type and the GapAnalysis interfaces from Discovery_Design v0.1 / DiscoveryEngine v0.1.
+- **Wire up Discovery chat to AI.** Connect the Discovery chat panel (`app/project/[projectId]/discovery.tsx`) to `createChatClient` + `parseDiscoveryResponse` + `extractDiscoveryNotes` so notes can be extracted from chat in the running app. Discovery Engine Phases 2–5 (chat-driven extraction → consolidation → gap analysis → re-consolidation) become unblocked.
 
-**Navigation spec update needed:** `Spec_Navigation.md` (v0.2) defines `/` as a single "Start Screen" route. The entry flow is now three screens (Splash → Project Chooser → Step Menu) at routes `/`, `/choose`, and `/project/:projectId/steps`. The nav spec needs a v0.3 revision to reflect these routes.
+- **`Spec_DiscoveryEngine.md` revision.** References "Conflict" in gap analysis and consolidation dimension mapping. Needs a pass to align with the Conflict→Theme rename (DataModel v0.3, ChatEngine v0.2).
+
+- **Refinement beat framework spec.** Story Arc, Plot, Plot Twist, Sub-plot, Pacing, Narrative POV, Catalyst, and Escalation moved out of the ConceptType system into a structural beat framework for Refinement. This system needs its own spec — the data model, framework selection (Simple/Standard/Detailed/Freeform/Custom per Phase_Architecture §3), and how beats interact with existing Concept cards.
+
+- **`Phase_Architecture.md` §8 cleanup.** Open question #1 (Theme ConceptTypes) is now resolved — can be marked closed.
+
+**Companion doc updates still pending:**
+
+- **DataModel v0.4.** Roll up the in-code `NoteColor` type and the `GapAnalysis` / `ConceptTypeMapping` interfaces from `Spec_Discovery_Design.md` v0.1 and `Spec_DiscoveryEngine.md` v0.1.
+
+- **Navigation spec update.** `Spec_Navigation.md` (v0.2) defines `/` as a single "Start Screen" route. The entry flow is now three screens (Splash → Project Chooser → Step Menu) at routes `/`, `/choose`, and `/project/:projectId/steps`. Needs a v0.3 revision.
