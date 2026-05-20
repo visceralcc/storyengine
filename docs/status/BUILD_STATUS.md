@@ -100,6 +100,11 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Phase-adaptive system prompts | One pipeline, four personalities — prompt changes by phase, mechanics stay the same | ChatEngine v0.1 |
 | RETHINK requires confirmation | Major concept version changes (RETHINK) trigger user confirmation; REFINE applies automatically | ChatEngine v0.1 |
 | Context caps | 40 message history cap, 50 Discovery note cap in context | ChatEngine v0.1 |
+| Story Elements mental model | User-facing term for Concepts in Development — creative building blocks, not database taxonomy | Development Brief |
+| Focus model for Development | One dimension at a time; other two recede. Creative gravity determines initial focus. | Development Brief |
+| Element detail as focused view | Tapping a story element opens focused detail view (exact pattern TBD in Figma) | Development Brief |
+| Contextual relationships | Cross-element connections shown when focused on an element, not as a global web | Development Brief |
+| Core / Evolve / Set Aside | Three-state creative tag on story elements: Core (central), Evolve (needs work), Set Aside (parked) | Development Brief |
 
 ---
 
@@ -134,6 +139,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | `start-screen/Spec_SplashScreen_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 | `start-screen/Spec_ProjectChooser_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 | `start-screen/Spec_StepMenu_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
+| `design/Development_Screen_Brief.md` | Design Brief | ✅ Complete |
 
 ---
 
@@ -182,7 +188,7 @@ Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
 ## What's Next
 
-**Immediate next step:** Revise the Workspace Figma design before writing `Spec_Workspace_Design.md` (Phase D, Order 8). The current Figma screen (node `69:53`) shows the Development shell but needs design decisions for dimension switching, concept card layout, phase transition controls, and RETHINK confirmation UX before the spec can be written. Charlie is revising the design — spec writing resumes after that.
+**Immediate next step:** Design the Development screen in Figma using `docs/design/Development_Screen_Brief.md` as the creative direction. The brief captures conceptual decisions from the May 2026 thought experiment: three-level hierarchy (dimension → element → detail), focus model (one dimension at a time), Core/Evolve/Set Aside element tagging, contextual relationships, and Ready Player One example content for the comp. Once Figma designs are complete, bring them to a new thread to write `Spec_Development_Design.md`.
 
 **Also pending:**
 

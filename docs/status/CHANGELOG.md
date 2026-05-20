@@ -4,6 +4,12 @@ All notable changes, logged per session. Tags: `[ui]` `[data]` `[infra]` `[spec]
 
 ---
 
+## 2026-05-20
+
+- [docs] Created `docs/design/Development_Screen_Brief.md` — pre-spec design brief capturing conceptual decisions for the Development screen: three-level hierarchy (dimension → element → detail), focus model (one dimension at a time, others recede), Core/Evolve/Set Aside element tagging, contextual relationship display, and Ready Player One example content in mid-development voice for Figma comps.
+- [docs] Key decisions made: "story elements" as the user-facing mental model for Concepts; focus model over dashboard model; Core/Evolve/Set Aside as three-state creative curation tag (inspired by Continue/Pivot/Stop but softened for creative context); relationships shown contextually when focused on an element, not as a global web.
+- [docs] Updated BUILD_STATUS.md — new decisions logged, Development_Screen_Brief added to inventory, next step updated to Figma design.
+
 ## 2026-05-18
 
 - [infra] Chat Engine Phase 7 — Refinement chat integration. The Refinement system prompt (§4.3 — STORYLINE EXTRACTION listing the 8 Storyline types, EDITORIAL VOICE shift, TONE) shipped in Phase 2's `prompts.ts`, and `buildDevelopmentContext` with `phase: 'REFINEMENT'` already widens the available ConceptTypes to include STORYLINE alongside the active dimension. Phase 7 adds end-to-end verification: new `__tests__/refinementChat.test.ts` proves (a) the eight default Storyline ConceptTypes from `defaults.ts` are surfaced by the Refinement context and excluded from Development, (b) a parsed Refinement AI response extracting Storyline concepts (Story Arc, Tone, Narrative POV) lands on the correct ConceptType IDs with `dimension: STORYLINE`, (c) Refinement-phase REFINE updates to Character concepts work (§4.3 rule 4: "Continue to refine World, Character, and Conflict concepts as needed"), (d) the assembled Refinement system prompt has all editorial-voice markers AND the Storyline context block, and (e) the Refinement prompt is meaningfully different from the Development prompt (no copy-paste). 10 new tests — 189 tests total passing. **Chat Engine build sequence Phases 1–7 complete; the engine pipeline is end-to-end ready.**
