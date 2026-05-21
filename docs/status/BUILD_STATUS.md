@@ -1,6 +1,6 @@
 # Story Engine — Build Status
 
-**Last updated:** May 21, 2026 (back/forward navigation arrows added to the phase headers)
+**Last updated:** May 21, 2026 (Splash screen video background)
 
 ---
 
@@ -118,6 +118,7 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Development reachable from Step Menu | "Development" row on the Step Menu unlocked, routes to `/project/:id/development` | Development UI Phase 1 |
 | Detail View is an in-screen mode | The Story Element Detail View is a state within the Development screen (dissolve swap with the canvas), not a separate route — matches "replaces the canvas view" (Spec §3.2) | Development UI Phase 2 |
 | Development chat is workspace-scoped | Chat state (messages, streaming, pending RETHINKs) lifted to DevelopmentWorkspace so one continuous conversation is shared across the Canvas/Detail/Compare surfaces; the full ProjectFile is held in workspace state so each extraction's context sees the latest concepts | Development UI Phase 4a |
+| Splash video via plain `<video>` | The Splash background is a bundled MP4 rendered through a raw HTML `<video>` (React Native Web DOM passthrough) with the URL resolved by `expo-asset` — no `expo-av`. Replaces the simulated white→dark color transition; the Spec §5.1 loading fade is dropped for a flat `#1A1A1A` fallback | Splash video task |
 
 ---
 
@@ -178,7 +179,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | Discovery Engine | 3 — Consolidation | ⬜ | not started |
 | Discovery Engine | 4 — Gap analysis | ⬜ | not started |
 | Discovery Engine | 5 — Re-consolidation + review | ⬜ | not started |
-| **Entry Flow UI** | **Splash Screen** | **✅ Complete** | **`app/index.tsx`** |
+| **Entry Flow UI** | **Splash Screen** | **✅ Complete** | **`app/index.tsx`, `assets/video/splash.mp4` (looping video background)** |
 | **Entry Flow UI** | **Project Chooser** | **✅ Complete** | **`app/choose.tsx`** |
 | **Entry Flow UI** | **Step Menu** | **✅ Complete** | **`app/project/[projectId]/steps.tsx`** |
 | **Entry Flow UI** | **Font loading** | **✅ Complete** | **`app/_layout.tsx` (Barlow_100Thin, Barlow_500Medium, Aleo_400Regular, Aleo_400Regular_Italic, Aleo_700Bold)** |
