@@ -1,12 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 21, 2026 (Development UI Phases 1–3 complete; project docs synced)
+**Last updated:** May 21, 2026 (Discovery + Development chat panels wired to the Anthropic API)
 
 ---
 
 ## Current Phase: Implementing (Chat Engine Phases 1–7 complete)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and **all seven Chat Engine phases** are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine is now end-to-end ready: streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly with 40-message / 50-note caps (Phase 2), Discovery response parser + viewport-placement extraction with collision avoidance (Phase 3), Development/Refinement response parsing + Concept/ConceptType/Version creation + REFINE/RETHINK refinement (Phase 4), custom ConceptType creation guardrails (Phase 5), Development opening-message generator + gap-aware system prompt assembly (Phase 6), and Refinement integration with Storyline ConceptTypes + editorial-voice prompt (Phase 7). UI wire-up — connecting the Discovery chat panel and a Workspace surface to the engine — is the next major track. The Development UI is now under construction: Phases 1–3 are complete — the three-column canvas with story element cards and ui_eval bars, the Story Element Detail View (writing area, IDEA + DEFINITION sections, pillar reassignment, Related Elements panel), and the Compare View with the comparison-mode two-card selection flow. Remaining: Phase 4 — wiring the chat panel to the AI plus text highlighting and contextual prompts.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and **all seven Chat Engine phases** are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine is now end-to-end ready: streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly with 40-message / 50-note caps (Phase 2), Discovery response parser + viewport-placement extraction with collision avoidance (Phase 3), Development/Refinement response parsing + Concept/ConceptType/Version creation + REFINE/RETHINK refinement (Phase 4), custom ConceptType creation guardrails (Phase 5), Development opening-message generator + gap-aware system prompt assembly (Phase 6), and Refinement integration with Storyline ConceptTypes + editorial-voice prompt (Phase 7). Both chat panels (Discovery and Development) are now wired to the Anthropic API through the Chat Engine pipeline — streaming responses, Discovery note extraction, and Development concept extraction all run in the live app. The Development UI is now under construction: Phases 1–3 are complete — the three-column canvas with story element cards and ui_eval bars, the Story Element Detail View (writing area, IDEA + DEFINITION sections, pillar reassignment, Related Elements panel), and the Compare View with the comparison-mode two-card selection flow. Remaining: Development UI Phase 4 polish — text highlighting from chat and contextual prompts (the chat-to-AI wiring itself is now complete).
 
 ---
 
@@ -117,6 +117,7 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Development canvas sample data | When a project has no consolidated Concepts, the canvas renders a Ready Player One sample dataset; real Concepts take over automatically once consolidation is wired | Development UI Phase 1 |
 | Development reachable from Step Menu | "Development" row on the Step Menu unlocked, routes to `/project/:id/development` | Development UI Phase 1 |
 | Detail View is an in-screen mode | The Story Element Detail View is a state within the Development screen (dissolve swap with the canvas), not a separate route — matches "replaces the canvas view" (Spec §3.2) | Development UI Phase 2 |
+| Development chat is workspace-scoped | Chat state (messages, streaming, pending RETHINKs) lifted to DevelopmentWorkspace so one continuous conversation is shared across the Canvas/Detail/Compare surfaces; the full ProjectFile is held in workspace state so each extraction's context sees the latest concepts | Development UI Phase 4a |
 
 ---
 
@@ -173,7 +174,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | DataPersistence | 4 — Image management | ⬜ | `src/persistence/imageStore.ts` |
 | DataPersistence | 5 — Local server | ⬜ | `src/persistence/server.ts` |
 | Discovery Engine | 1 — Canvas core | ✅ Complete | `src/engine/discovery/canvasManager.ts` |
-| Discovery Engine | 2 — Chat integration | ⬜ | not started |
+| Discovery Engine | 2 — Chat integration | ✅ Complete | Discovery chat panel wired to the Chat Engine in `app/project/[projectId]/discovery.tsx` |
 | Discovery Engine | 3 — Consolidation | ⬜ | not started |
 | Discovery Engine | 4 — Gap analysis | ⬜ | not started |
 | Discovery Engine | 5 — Re-consolidation + review | ⬜ | not started |
@@ -189,6 +190,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | **Discovery UI** | **Phase 4 — Canvas + note placement / edit / drag / delete** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
 | **Discovery UI** | **Phase 5 — Consolidate Ideas button (UI stub)** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
 | **Discovery UI** | **Phase 6 — Trackpad pan + flow verification** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`** |
+| **Discovery UI** | **Chat AI wiring** | **✅ Complete** | **`app/project/[projectId]/discovery.tsx`, `.env`** |
 | Chat Engine | 1 — API client + streaming | ✅ Complete | `src/engine/chat/types.ts`, `src/engine/chat/client.ts` |
 | Chat Engine | 2 — Context assembly | ✅ Complete | `src/engine/chat/prompts.ts`, `src/engine/chat/context.ts` |
 | Chat Engine | 3 — Discovery chat integration | ✅ Complete | `src/engine/chat/parser.ts`, `src/engine/chat/extraction.ts` |
@@ -200,7 +202,8 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | **Development UI** | **Phase 1 — Canvas layout + card rendering** | **✅ Complete** | **`app/project/[projectId]/development.tsx`, `src/development/storyElements.ts`, `app/_layout.tsx`, `app/project/[projectId]/steps.tsx`** |
 | **Development UI** | **Phase 2 — Story Element Detail View** | **✅ Complete** | **`app/project/[projectId]/development.tsx`, `assets/icons/icon_pencil.svg`** |
 | **Development UI** | **Phase 3 — Compare View + comparison flow** | **✅ Complete** | **`app/project/[projectId]/development.tsx`** |
-| Development UI | Phase 4 — Chat interactions (highlighting, prompts) | ⬜ | not started |
+| **Development UI** | **Phase 4a — Chat panel wired to the AI** | **✅ Complete** | **`app/project/[projectId]/development.tsx`** |
+| Development UI | Phase 4b — Text highlighting + contextual prompts | ⬜ | not started |
 
 Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
@@ -208,7 +211,7 @@ Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
 ## What's Next
 
-**Immediate next step:** Development UI Phase 4 — chat interactions: wire the Development chat panel to the Anthropic API via the Chat Engine, then add text highlighting from chat (Spec §4.3) and contextual prompts (§4.4). Phases 1–3 (Development Canvas, Story Element Detail View, Compare View) are complete.
+**Immediate next step:** Development UI Phase 4b — text highlighting from chat (Spec §4.3) and contextual prompts (§4.4). The Discovery and Development chat panels are now wired to the Anthropic API through the Chat Engine pipeline (Phase 4a complete).
 
 **Also completed this session:**
 - `Spec_Development_Design.md` v0.2 — reconciled against four Figma screens (Canvas, Story Element Small, Detail View, Compare View). 6 of 7 open questions resolved. Only remaining open question: Refinement phase unlock trigger.
@@ -217,7 +220,7 @@ Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
 **Also pending:**
 
-- **Wire up Discovery chat to AI.** Connect the Discovery chat panel (`app/project/[projectId]/discovery.tsx`) to `createChatClient` + `parseDiscoveryResponse` + `extractDiscoveryNotes` so notes can be extracted from chat in the running app. Discovery Engine Phases 2–5 (chat-driven extraction → consolidation → gap analysis → re-consolidation) become unblocked.
+- **Discovery Engine Phases 3–5 (consolidation → gap analysis → re-consolidation).** The Discovery chat panel is now wired to the AI; the "Consolidate Ideas" button is still a UI stub. Building consolidation unblocks gap analysis and feeds the gap-aware Development chat.
 
 - **`Spec_DiscoveryEngine.md` revision.** References "Conflict" in gap analysis and consolidation dimension mapping. Needs a pass to align with the Conflict→Theme rename (DataModel v0.3, ChatEngine v0.2).
 

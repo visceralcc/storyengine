@@ -34,8 +34,26 @@ import {
   TextInputKeyPressEventData,
   View,
 } from 'react-native';
+import {
+  createChatClient,
+  loadChatEngineConfig,
+  type ChatClient,
+} from '../../../src/engine/chat/client';
+import {
+  assembleSystemPrompt,
+  buildDevelopmentContext,
+  formatDevelopmentContextBlock,
+  selectConversationHistory,
+} from '../../../src/engine/chat/context';
+import {
+  applyConceptExtraction,
+  type PendingRethink,
+} from '../../../src/engine/chat/extraction';
+import { generateOpeningMessage } from '../../../src/engine/chat/openingMessage';
+import { parseExtractionResponse } from '../../../src/engine/chat/parser';
+import { applyRefine, applyRethink } from '../../../src/engine/chat/refinement';
 import { createChatMessage } from '../../../src/models/factories';
-import type { ChatMessage, CreativeTag, ProjectFile } from '../../../src/models/types';
+import type { ChatMessage, CreativeTag, Dimension, ProjectFile } from '../../../src/models/types';
 import {
   PILLAR_ORDER,
   getStoryElements,
@@ -169,19 +187,287 @@ type DevView =
   | { mode: 'detail'; elementId: string }
   | { mode: 'compare'; leftId: string; rightId: string };
 
-function DevelopmentWorkspace({ projectId, projectFile }: DevelopmentWorkspaceProps) {
+/**
+ * Props the ChatPanel needs from the workspace, bundled so the three surfaces
+ * (Canvas, Detail, Compare) forward one object. Development chat is a single
+ * continuous conversation shared across all of them (Spec_ChatEngine §9.3).
+ */
+type ChatProps = {
+  messages: ChatMessage[];
+  onSend: (text: string) => void;
+  isStreaming: boolean;
+  streamingText: string;
+  notice: string | null;
+  pendingRethinks: PendingRethink[];
+  onConfirmRethink: (rethink: PendingRethink) => void;
+  onRejectRethink: (rethink: PendingRethink) => void;
+};
+
+// Development chat hardcodes the active dimension for now. The AI auto-detects
+// dimension shifts from conversation context (§9.3), so CHARACTER as the
+// starting default is fine; a dimension-switching UI is a later task.
+const ACTIVE_DIMENSION: Dimension = 'CHARACTER';
+
+function DevelopmentWorkspace({
+  projectId,
+  projectFile: initialProjectFile,
+}: DevelopmentWorkspaceProps) {
+  // Option (a) from the Phase 2 brief: hold the whole ProjectFile in state so
+  // each extraction's context sees the latest concepts and concept types.
+  const [projectFile, setProjectFile] = useState<ProjectFile>(initialProjectFile);
+
+  // Development-phase chat — one continuous conversation shared by all three
+  // surfaces. Seeded from the persisted file; the opening message (§9.1) is
+  // appended below on first entry.
+  const initialDevMessages = useMemo(
+    () => initialProjectFile.chatMessages.filter((m) => m.phase === 'DEVELOPMENT'),
+    [initialProjectFile],
+  );
+  const [messages, setMessages] = useState<ChatMessage[]>(initialDevMessages);
+
+  // Live assistant response: a string while streaming, null when idle.
+  const [streaming, setStreaming] = useState<string | null>(null);
+  // Transient error notice (§2.2) — shown in chat, never persisted.
+  const [notice, setNotice] = useState<string | null>(null);
+  // RETHINK proposals awaiting user confirmation (§6.1).
+  const [rethinks, setRethinks] = useState<PendingRethink[]>([]);
+
   // Real story elements come from Discovery consolidation; until that pipeline
   // is wired, this resolves to the Ready Player One sample dataset. Held in
   // state so the Detail and Compare views can edit titles, definitions, and
-  // pillars, and so comparison can record new connections.
-  const [elements, setElements] = useState<StoryElement[]>(() => getStoryElements(projectFile));
+  // pillars; re-derived after each extraction so the canvas reflects new concepts.
+  const [elements, setElements] = useState<StoryElement[]>(() =>
+    getStoryElements(initialProjectFile),
+  );
   const [comparisonActive, setComparisonActive] = useState(false);
   const [selection, setSelection] = useState<string[]>([]);
   const [view, setView] = useState<DevView>({ mode: 'canvas' });
 
+  // Engine client + in-flight stream control. Held on the workspace (which
+  // does not unmount when the surface swaps) so the conversation and any
+  // active stream survive Canvas ⇄ Detail ⇄ Compare navigation.
+  const engine = useMemo<{ client: ChatClient | null; error: string | null }>(() => {
+    try {
+      return { client: createChatClient(loadChatEngineConfig()), error: null };
+    } catch (err) {
+      return { client: null, error: err instanceof Error ? err.message : String(err) };
+    }
+  }, []);
+  const abortRef = useRef<AbortController | null>(null);
+  // Each send bumps this; a stream whose id is stale has been superseded (§2.3).
+  const runIdRef = useRef(0);
+  const openingHandledRef = useRef(false);
+
   // Dissolve transition between surfaces (Spec §3.2): fade the current surface
   // out, swap, fade the next one in.
   const fade = useRef(new Animated.Value(1)).current;
+
+  // Abort an in-flight stream if the screen unmounts.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  // First entry to Development (§9.1): seed the conversation with an opening
+  // message keyed on the project's creative gravity, then persist it. On later
+  // visits the persisted history already contains it.
+  useEffect(() => {
+    if (openingHandledRef.current) return;
+    openingHandledRef.current = true;
+    if (initialDevMessages.length > 0) return;
+    const opening = generateOpeningMessage({
+      projectId,
+      creativeGravity: initialProjectFile.phaseState.discovery.creativeGravity,
+    });
+    const updated: ProjectFile = {
+      ...initialProjectFile,
+      chatMessages: [...initialProjectFile.chatMessages, opening],
+      project: { ...initialProjectFile.project, updatedAt: new Date().toISOString() },
+    };
+    setMessages([opening]);
+    setProjectFile(updated);
+    getDefaultProjectStore()
+      .saveProject(updated)
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[development] opening message save failed', err);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Streaming complete — parse the extraction, create/refine concepts, persist
+  // everything, and surface any RETHINK proposals (§5, §6.1).
+  const handleDone = (fullText: string, conversation: ChatMessage[], fileAtSend: ProjectFile) => {
+    const parsed = parseExtractionResponse(fullText);
+    if (parsed.parseError) {
+      // §10 — malformed JSON falls back to plain chat; log, don't surface.
+      // eslint-disable-next-line no-console
+      console.warn('[development] response parse error:', parsed.parseError);
+    }
+
+    const assistantMsg = createChatMessage({
+      projectId,
+      phase: 'DEVELOPMENT',
+      role: 'assistant',
+      content: parsed.chatResponse,
+    });
+    const result = applyConceptExtraction({
+      projectId,
+      parsed,
+      sourceMessageId: assistantMsg.id,
+      conceptTypes: fileAtSend.conceptTypes,
+      concepts: fileAtSend.concepts,
+    });
+    for (const warning of result.warnings) {
+      // eslint-disable-next-line no-console
+      console.warn(`[development] extraction warning (${warning.reason}): ${warning.message}`);
+    }
+
+    // `conversation` already holds every Development message plus the new user
+    // message; appending the assistant message gives the full phase history.
+    const finalMessages = [...conversation, assistantMsg];
+    const otherPhaseMessages = fileAtSend.chatMessages.filter((m) => m.phase !== 'DEVELOPMENT');
+    const updatedProjectFile: ProjectFile = {
+      ...fileAtSend,
+      chatMessages: [...otherPhaseMessages, ...finalMessages],
+      conceptTypes: [...fileAtSend.conceptTypes, ...result.newConceptTypes],
+      concepts: [
+        ...fileAtSend.concepts.map((c) => {
+          const refined = result.refinedConcepts.find((r) => r.conceptId === c.id);
+          return refined ? refined.updatedConcept : c;
+        }),
+        ...result.newConcepts,
+      ],
+      project: { ...fileAtSend.project, updatedAt: new Date().toISOString() },
+    };
+
+    setMessages(finalMessages);
+    setProjectFile(updatedProjectFile);
+    setElements(getStoryElements(updatedProjectFile));
+    setRethinks(result.pendingRethinks);
+    setStreaming(null);
+    getDefaultProjectStore()
+      .saveProject(updatedProjectFile)
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[development] save failed', err);
+      });
+  };
+
+  const runStream = async (
+    runId: number,
+    controller: AbortController,
+    conversation: ChatMessage[],
+    fileAtSend: ProjectFile,
+    client: ChatClient,
+  ) => {
+    const contextBlock = formatDevelopmentContextBlock(
+      buildDevelopmentContext({
+        project: fileAtSend.project,
+        activeDimension: ACTIVE_DIMENSION,
+        gapAnalysis: fileAtSend.phaseState.discovery.gapAnalysis,
+        concepts: fileAtSend.concepts,
+        conceptTypes: fileAtSend.conceptTypes,
+        discoveryNotes: fileAtSend.discoveryNotes,
+      }),
+    );
+    const system = assembleSystemPrompt({
+      phase: 'DEVELOPMENT',
+      projectContextBlock: contextBlock,
+      activeDimension: ACTIVE_DIMENSION,
+    });
+    const apiMessages = selectConversationHistory({ messages: conversation, phase: 'DEVELOPMENT' });
+
+    try {
+      for await (const event of client.sendMessage({
+        system,
+        messages: apiMessages,
+        signal: controller.signal,
+      })) {
+        // A newer send superseded this stream — drop its events silently (§2.3).
+        if (runIdRef.current !== runId) return;
+        if (event.type === 'delta') {
+          setStreaming((prev) => (prev ?? '') + event.text);
+        } else if (event.type === 'done') {
+          handleDone(event.text, conversation, fileAtSend);
+          return;
+        } else if (event.type === 'error') {
+          // CANCELLED is our own abort — discard quietly. Others surface (§2.2).
+          if (event.error.kind !== 'CANCELLED') setNotice(event.error.message);
+          setStreaming(null);
+          return;
+        }
+      }
+    } catch (err) {
+      if (runIdRef.current !== runId) return;
+      // eslint-disable-next-line no-console
+      console.error('[development] chat stream failed', err);
+      setNotice('Something went wrong with the AI service. Try again in a moment.');
+      setStreaming(null);
+    }
+  };
+
+  const handleSend = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (!engine.client) {
+      setNotice(engine.error ?? 'The AI is unavailable.');
+      return;
+    }
+
+    // §2.3 — a new send while a response streams cancels the in-flight one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const runId = ++runIdRef.current;
+
+    // §6.1 — unconfirmed RETHINK proposals are discarded once the user moves on.
+    setRethinks([]);
+    setNotice(null);
+
+    const userMsg = createChatMessage({
+      projectId,
+      phase: 'DEVELOPMENT',
+      role: 'user',
+      content: trimmed,
+    });
+    const conversation = [...messages, userMsg];
+    setMessages(conversation);
+    setStreaming('');
+
+    void runStream(runId, controller, conversation, projectFile, engine.client);
+  };
+
+  // Resolve a confirmed RETHINK: 'RETHINK' creates a new concept version,
+  // 'REFINE' edits the current version in place (§6.1).
+  const resolveRethink = (rethink: PendingRethink, mode: 'RETHINK' | 'REFINE') => {
+    setRethinks((prev) => prev.filter((r) => r !== rethink));
+    const target = projectFile.concepts.find((c) => c.id === rethink.conceptId);
+    if (!target) return;
+    const updatedConcept =
+      mode === 'RETHINK'
+        ? applyRethink({
+            concept: target,
+            newValue: rethink.newValue,
+            sourceMessageId: rethink.sourceMessageId,
+          })
+        : applyRefine({
+            concept: target,
+            newValue: rethink.newValue,
+            sourceMessageId: rethink.sourceMessageId,
+          });
+    const updated: ProjectFile = {
+      ...projectFile,
+      concepts: projectFile.concepts.map((c) => (c.id === rethink.conceptId ? updatedConcept : c)),
+      project: { ...projectFile.project, updatedAt: new Date().toISOString() },
+    };
+    setProjectFile(updated);
+    setElements(getStoryElements(updated));
+    getDefaultProjectStore()
+      .saveProject(updated)
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[development] rethink save failed', err);
+      });
+  };
+
   const navigateTo = (next: DevView) => {
     Animated.timing(fade, { toValue: 0, duration: 150, useNativeDriver: false }).start(() => {
       setView(next);
@@ -241,6 +527,17 @@ function DevelopmentWorkspace({ projectId, projectFile }: DevelopmentWorkspacePr
 
   const findElement = (id: string) => elements.find((el) => el.id === id) ?? null;
 
+  const chat: ChatProps = {
+    messages,
+    onSend: handleSend,
+    isStreaming: streaming !== null,
+    streamingText: streaming ?? '',
+    notice,
+    pendingRethinks: rethinks,
+    onConfirmRethink: (rethink) => resolveRethink(rethink, 'RETHINK'),
+    onRejectRethink: (rethink) => resolveRethink(rethink, 'REFINE'),
+  };
+
   let surface: ReactNode;
   if (view.mode === 'detail') {
     const element = findElement(view.elementId);
@@ -248,7 +545,7 @@ function DevelopmentWorkspace({ projectId, projectFile }: DevelopmentWorkspacePr
       surface = (
         <StoryElementDetailView
           key={`detail-${element.id}`}
-          projectId={projectId}
+          chat={chat}
           element={element}
           allElements={elements}
           onDismiss={() => navigateTo({ mode: 'canvas' })}
@@ -264,7 +561,7 @@ function DevelopmentWorkspace({ projectId, projectFile }: DevelopmentWorkspacePr
       surface = (
         <CompareView
           key={`compare-${left.id}-${right.id}`}
-          projectId={projectId}
+          chat={chat}
           left={left}
           right={right}
           onUpdate={updateElement}
@@ -276,7 +573,7 @@ function DevelopmentWorkspace({ projectId, projectFile }: DevelopmentWorkspacePr
   if (!surface) {
     surface = (
       <DevelopmentCanvas
-        projectId={projectId}
+        chat={chat}
         elements={elements}
         comparisonActive={comparisonActive}
         selectedIds={selection}
@@ -298,7 +595,7 @@ function DevelopmentWorkspace({ projectId, projectFile }: DevelopmentWorkspacePr
 // =====================================================================
 
 type DevelopmentCanvasProps = {
-  projectId: string;
+  chat: ChatProps;
   elements: StoryElement[];
   comparisonActive: boolean;
   selectedIds: string[];
@@ -307,7 +604,7 @@ type DevelopmentCanvasProps = {
 };
 
 function DevelopmentCanvas({
-  projectId,
+  chat,
   elements,
   comparisonActive,
   selectedIds,
@@ -319,7 +616,7 @@ function DevelopmentCanvas({
       <PhaseHeader comparisonActive={comparisonActive} onToggleComparison={onToggleComparison} />
       <View style={styles.contentRow}>
         <View style={styles.chatRegion}>
-          <ChatPanel projectId={projectId} />
+          <ChatPanel {...chat} />
         </View>
         <View style={styles.columnsRow}>
           {PILLAR_ORDER.map((pillar) => (
@@ -487,7 +784,7 @@ function StoryElementCard({
 // =====================================================================
 
 type StoryElementDetailViewProps = {
-  projectId: string;
+  chat: ChatProps;
   element: StoryElement;
   allElements: StoryElement[];
   onDismiss: () => void;
@@ -501,7 +798,7 @@ function detailWelcome(element: StoryElement): string {
 }
 
 function StoryElementDetailView({
-  projectId,
+  chat,
   element,
   allElements,
   onDismiss,
@@ -520,7 +817,7 @@ function StoryElementDetailView({
     <View style={styles.surface}>
       <View style={styles.detailRow}>
         <View style={styles.chatRegion}>
-          <ChatPanel projectId={projectId} welcome={detailWelcome(element)} />
+          <ChatPanel {...chat} welcome={detailWelcome(element)} />
         </View>
         <View style={styles.writingRegion}>
           <WritingArea element={element} onDismiss={onDismiss} onUpdate={onUpdate} />
@@ -789,7 +1086,7 @@ function RelatedElementsPanel({ pillar, related, onNavigate }: RelatedElementsPa
 // =====================================================================
 
 type CompareViewProps = {
-  projectId: string;
+  chat: ChatProps;
   left: StoryElement;
   right: StoryElement;
   onUpdate: (id: string, patch: Partial<StoryElement>) => void;
@@ -806,12 +1103,12 @@ function compareWelcome(left: StoryElement, right: StoryElement): string {
  * the right is present — dismissing the right returns to the left element's
  * Detail View (Spec §3.3, §4.6).
  */
-function CompareView({ projectId, left, right, onUpdate, onDismissRight }: CompareViewProps) {
+function CompareView({ chat, left, right, onUpdate, onDismissRight }: CompareViewProps) {
   return (
     <View style={styles.surface}>
       <View style={styles.detailRow}>
         <View style={styles.chatRegion}>
-          <ChatPanel projectId={projectId} welcome={compareWelcome(left, right)} />
+          <ChatPanel {...chat} welcome={compareWelcome(left, right)} />
         </View>
         <View style={styles.compareHalf}>
           <WritingArea key={left.id} element={left} onUpdate={onUpdate} />
@@ -835,30 +1132,52 @@ function CompareView({ projectId, left, right, onUpdate, onDismissRight }: Compa
 
 const CANVAS_WELCOME = 'Your ideas are organized. Tap any element to start defining it in detail.';
 
-type ChatPanelProps = {
-  projectId: string;
-  /** Opening assistant message — contextual to the active element in the Detail View. */
+type ChatPanelProps = ChatProps & {
+  /** Opening assistant greeting — contextual to the active surface. A static
+   *  UI affordance, distinct from the persisted opening message (§9.1). */
   welcome?: string;
 };
 
-function ChatPanel({ projectId, welcome = CANVAS_WELCOME }: ChatPanelProps) {
-  // Phase 1/2: local-only. AI wiring + persistence arrive in a later phase.
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+/**
+ * Conversational text for the live streaming bubble. The structured JSON
+ * block (§5.2) arrives at the tail of the response; we hide it while
+ * streaming and show only the chat portion (Spec_ChatEngine §2.3). An empty
+ * string renders as a typing ellipsis.
+ */
+function streamingDisplayText(raw: string): string {
+  const conversational = raw.split('```json')[0].trimEnd();
+  return conversational.length > 0 ? conversational : '…';
+}
+
+/**
+ * Pure display component. All AI logic lives in DevelopmentWorkspace; the
+ * panel renders the shared conversation, the live streaming bubble, RETHINK
+ * confirmations, and error notices, and reports input via `onSend`.
+ */
+function ChatPanel({
+  welcome = CANVAS_WELCOME,
+  messages,
+  onSend,
+  isStreaming,
+  streamingText,
+  notice,
+  pendingRethinks,
+  onConfirmRethink,
+  onRejectRethink,
+}: ChatPanelProps) {
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
-  const send = () => {
+  // Keep the latest content in view as the conversation grows.
+  useEffect(() => {
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  }, [messages, streamingText, pendingRethinks, notice]);
+
+  const submit = () => {
     const trimmed = draft.trim();
     if (!trimmed) return;
-    const msg = createChatMessage({
-      projectId,
-      phase: 'DEVELOPMENT',
-      role: 'user',
-      content: trimmed,
-    });
-    setMessages((prev) => [...prev, msg]);
+    onSend(trimmed);
     setDraft('');
-    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   };
 
   const onKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
@@ -866,7 +1185,7 @@ function ChatPanel({ projectId, welcome = CANVAS_WELCOME }: ChatPanelProps) {
       const native = e.nativeEvent as TextInputKeyPressEventData & { shiftKey?: boolean };
       if (!native.shiftKey) {
         e.preventDefault?.();
-        send();
+        submit();
       }
     }
   };
@@ -879,6 +1198,7 @@ function ChatPanel({ projectId, welcome = CANVAS_WELCOME }: ChatPanelProps) {
         style={styles.chatMessages}
         contentContainerStyle={styles.chatMessagesContent}
       >
+        {/* Welcome bubble — a UI affordance, not part of the persisted history. */}
         <View style={[styles.bubble, styles.bubbleAi]}>
           <Text style={styles.bubbleTextAi}>{welcome}</Text>
         </View>
@@ -892,6 +1212,24 @@ function ChatPanel({ projectId, welcome = CANVAS_WELCOME }: ChatPanelProps) {
             </Text>
           </View>
         ))}
+        {isStreaming && (
+          <View style={[styles.bubble, styles.bubbleAi]}>
+            <Text style={styles.bubbleTextAi}>{streamingDisplayText(streamingText)}</Text>
+          </View>
+        )}
+        {pendingRethinks.map((rethink, i) => (
+          <RethinkConfirm
+            key={`rethink-${i}-${rethink.conceptId}`}
+            rethink={rethink}
+            onConfirm={() => onConfirmRethink(rethink)}
+            onReject={() => onRejectRethink(rethink)}
+          />
+        ))}
+        {notice !== null && (
+          <View style={[styles.bubble, styles.bubbleSystem]}>
+            <Text style={styles.bubbleTextSystem}>{notice}</Text>
+          </View>
+        )}
       </ScrollView>
       <View style={styles.chatInputArea}>
         <TextInput
@@ -906,13 +1244,63 @@ function ChatPanel({ projectId, welcome = CANVAS_WELCOME }: ChatPanelProps) {
         />
         <Pressable
           accessibilityLabel="Send message"
-          onPress={send}
+          accessibilityState={{ disabled: isStreaming }}
+          disabled={isStreaming}
+          onPress={submit}
           style={(state) => [
             styles.sendButton,
-            (state as { hovered?: boolean }).hovered && styles.sendButtonHover,
+            isStreaming && styles.sendButtonDisabled,
+            !isStreaming && (state as { hovered?: boolean }).hovered && styles.sendButtonHover,
           ]}
         >
           <Text style={styles.sendArrow}>↑</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+type RethinkConfirmProps = {
+  rethink: PendingRethink;
+  onConfirm: () => void;
+  onReject: () => void;
+};
+
+/**
+ * Inline confirmation for a RETHINK proposal (§6.1). Concept versioning is
+ * user-initiated, so a major change is never applied without an explicit
+ * choice: "New version" creates a new ConceptVersion, "Update existing"
+ * downgrades it to an in-place REFINE.
+ */
+function RethinkConfirm({ rethink, onConfirm, onReject }: RethinkConfirmProps) {
+  return (
+    <View style={styles.rethinkCard}>
+      <Text style={styles.rethinkText}>
+        {rethink.conceptTypeLabel}: This is a big change — create a new version, or update the
+        existing one?
+      </Text>
+      <View style={styles.rethinkButtonRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Create a new version"
+          onPress={onConfirm}
+          style={(state) => [
+            styles.rethinkButton,
+            (state as { hovered?: boolean }).hovered && styles.rethinkButtonHover,
+          ]}
+        >
+          <Text style={styles.rethinkButtonText}>New version</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Update the existing version"
+          onPress={onReject}
+          style={(state) => [
+            styles.rethinkButton,
+            (state as { hovered?: boolean }).hovered && styles.rethinkButtonHover,
+          ]}
+        >
+          <Text style={styles.rethinkButtonText}>Update existing</Text>
         </Pressable>
       </View>
     </View>
@@ -1092,6 +1480,53 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlign: 'right',
   },
+  bubbleSystem: {
+    alignSelf: 'center',
+    maxWidth: '100%',
+    paddingHorizontal: 8,
+  },
+  bubbleTextSystem: {
+    fontFamily: 'Aleo_400Regular_Italic',
+    fontSize: 14,
+    color: TEXT_SUBTITLE,
+    includeFontPadding: false,
+    textAlign: 'center',
+  },
+  rethinkCard: {
+    alignSelf: 'stretch',
+    backgroundColor: WHITE,
+    borderRadius: 10,
+    padding: 12,
+    gap: 10,
+  },
+  rethinkText: {
+    fontFamily: 'Aleo_400Regular',
+    fontSize: 14,
+    color: TEXT_BLACK,
+    includeFontPadding: false,
+    lineHeight: 19,
+  },
+  rethinkButtonRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  rethinkButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: SEND_BORDER,
+    borderRadius: 6,
+    paddingVertical: 7,
+    alignItems: 'center',
+  },
+  rethinkButtonHover: {
+    backgroundColor: COL_GRADIENT_TOP,
+  },
+  rethinkButtonText: {
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 13,
+    color: TEXT_BLACK,
+    includeFontPadding: false,
+  },
   chatInputArea: {
     backgroundColor: WHITE,
     borderRadius: 10,
@@ -1123,6 +1558,9 @@ const styles = StyleSheet.create({
   },
   sendButtonHover: {
     backgroundColor: COL_GRADIENT_BOTTOM,
+  },
+  sendButtonDisabled: {
+    opacity: 0.4,
   },
   sendArrow: {
     fontSize: 14,
