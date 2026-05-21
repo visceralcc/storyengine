@@ -30,6 +30,10 @@ export type GapConfidence = 'STRONG' | 'PARTIAL';
 
 export type NoteColor = 'BLUE' | 'GREEN' | 'PURPLE' | 'GOLD' | 'PINK' | 'GRAY';
 
+// Core/Evolve/Set Aside creative tag — drives the ui_eval bar color in the
+// Development phase. Added per Spec_Development_Design.md §6.1.
+export type CreativeTag = 'CORE' | 'EVOLVE' | 'SET_ASIDE';
+
 // --- Shared shapes ---
 
 export interface Position {
@@ -121,6 +125,12 @@ export interface Concept {
   dimension: Dimension;
   currentVersionId: string;
   versions: ConceptVersion[];
+  // The user's expanded written definition, authored in the Development phase.
+  // Kept separate from the version `value` (the Discovery summary) so the
+  // original summary is preserved. See Spec_Development_Design.md §6.1.
+  definition: string | null;
+  // Core/Evolve/Set Aside tag — maps to the ui_eval bar. Defaults to 'CORE'.
+  creativeTag: CreativeTag;
   relatedConceptIds: string[];
   sourceMessageId: string | null;
   imageIds: string[];

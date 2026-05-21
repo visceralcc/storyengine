@@ -1,12 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 21, 2026 (Development Design Spec v0.2 complete)
+**Last updated:** May 21, 2026 (Development UI Phase 1 — canvas layout)
 
 ---
 
 ## Current Phase: Implementing (Chat Engine Phases 1–7 complete)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and **all seven Chat Engine phases** are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine is now end-to-end ready: streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly with 40-message / 50-note caps (Phase 2), Discovery response parser + viewport-placement extraction with collision avoidance (Phase 3), Development/Refinement response parsing + Concept/ConceptType/Version creation + REFINE/RETHINK refinement (Phase 4), custom ConceptType creation guardrails (Phase 5), Development opening-message generator + gap-aware system prompt assembly (Phase 6), and Refinement integration with Storyline ConceptTypes + editorial-voice prompt (Phase 7). UI wire-up — connecting the Discovery chat panel and a Workspace surface to the engine — is the next major track.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and **all seven Chat Engine phases** are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine is now end-to-end ready: streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly with 40-message / 50-note caps (Phase 2), Discovery response parser + viewport-placement extraction with collision avoidance (Phase 3), Development/Refinement response parsing + Concept/ConceptType/Version creation + REFINE/RETHINK refinement (Phase 4), custom ConceptType creation guardrails (Phase 5), Development opening-message generator + gap-aware system prompt assembly (Phase 6), and Refinement integration with Storyline ConceptTypes + editorial-voice prompt (Phase 7). UI wire-up — connecting the Discovery chat panel and a Workspace surface to the engine — is the next major track. The Development Canvas UI is now under construction: Phase 1 (three-column pillar layout, story element cards with ui_eval bars, phase header, canvas chat panel, comparison-mode button) is complete.
 
 ---
 
@@ -114,6 +114,8 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Element detail as focused view | Tapping a story element opens focused detail view (exact pattern TBD in Figma) | Development Brief |
 | Contextual relationships | Cross-element connections shown when focused on an element, not as a global web | Development Brief |
 | Core / Evolve / Set Aside | Three-state creative tag on story elements: Core (central), Evolve (needs work), Set Aside (parked) | Development Brief |
+| Development canvas sample data | When a project has no consolidated Concepts, the canvas renders a Ready Player One sample dataset; real Concepts take over automatically once consolidation is wired | Development UI Phase 1 |
+| Development reachable from Step Menu | "Development" row on the Step Menu unlocked, routes to `/project/:id/development` | Development UI Phase 1 |
 
 ---
 
@@ -191,6 +193,11 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | Chat Engine | 5 — Custom ConceptType creation | ✅ Complete | `src/engine/chat/prompts.ts` (Development §7 guardrails) + integration tests in `__tests__/conceptTypes.test.ts` |
 | Chat Engine | 6 — Gap-aware conversation | ✅ Complete | `src/engine/chat/openingMessage.ts` + integration tests in `__tests__/gapAware.test.ts` (gap-analysis wiring already shipped in Phase 2) |
 | Chat Engine | 7 — Refinement chat integration | ✅ Complete | End-to-end integration tests in `__tests__/refinementChat.test.ts` (prompt + Storyline context widening already shipped in Phase 2) |
+| **Development UI** | **Data model — `definition` + `creativeTag`** | **✅ Complete** | **`src/models/types.ts`, `src/models/factories.ts`** |
+| **Development UI** | **Phase 1 — Canvas layout + card rendering** | **✅ Complete** | **`app/project/[projectId]/development.tsx`, `src/development/storyElements.ts`, `app/_layout.tsx`, `app/project/[projectId]/steps.tsx`** |
+| Development UI | Phase 2 — Story Element Detail View | ⬜ | not started |
+| Development UI | Phase 3 — Compare View + comparison flow | ⬜ | not started |
+| Development UI | Phase 4 — Chat interactions (highlighting, prompts) | ⬜ | not started |
 
 Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
@@ -198,7 +205,7 @@ Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
 ## What's Next
 
-**Immediate next step:** Wire up Discovery chat to AI, or begin building the Development Canvas UI using the handoff prompt in `Spec_Development_Design.md` v0.2. The Development screen Figma designs are complete and reconciled against the spec.
+**Immediate next step:** Development UI Phase 2 — the Story Element Detail View (writing area with IDEA + IDEA THOUGHT / DEFINITION sections, tappable pillar header, Related Elements panel, dismiss navigation via the × button). Phase 1 (Development Canvas) is complete.
 
 **Also completed this session:**
 - `Spec_Development_Design.md` v0.2 — reconciled against four Figma screens (Canvas, Story Element Small, Detail View, Compare View). 6 of 7 open questions resolved. Only remaining open question: Refinement phase unlock trigger.

@@ -59,7 +59,12 @@ export default function StepsRoute() {
           onPress={() => router.push(`/project/${projectId}/discovery`)}
         />
         <View style={styles.gapBetweenRows} />
-        <StepRow number="2" name="Development" locked />
+        <StepRow
+          number="2"
+          name="Development"
+          locked={false}
+          onPress={() => router.push(`/project/${projectId}/development`)}
+        />
         <View style={styles.gapBetweenRows} />
         <StepRow number="3" name="Refinement" locked />
       </View>

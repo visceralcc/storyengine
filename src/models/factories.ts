@@ -19,6 +19,7 @@ import type {
   Concept,
   ConceptType,
   ConceptVersion,
+  CreativeTag,
   Dimension,
   DiscoveryNote,
   Image,
@@ -204,6 +205,8 @@ export interface CreateConceptInput {
   value: string;
   position?: Position;
   sourceMessageId?: string | null;
+  definition?: string | null;
+  creativeTag?: CreativeTag;
   now?: string;
 }
 
@@ -224,6 +227,8 @@ export function createConcept(input: CreateConceptInput): Concept {
     dimension: input.dimension,
     currentVersionId: firstVersion.id,
     versions: [firstVersion],
+    definition: input.definition ?? null,
+    creativeTag: input.creativeTag ?? 'CORE',
     relatedConceptIds: [],
     sourceMessageId: input.sourceMessageId ?? null,
     imageIds: [],
