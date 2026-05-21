@@ -21,9 +21,24 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 | Text Secondary | `#6B6B6B` | Supporting text, labels, metadata |
 | Text Tertiary | `#999999` | Placeholder text, disabled states |
 
-**No accent color defined yet.** The current palette is intentionally neutral. An accent color (for interactive elements, focus states, active tabs) will need to be chosen before building interactive UI. This is a design decision to make before Phase C (Surfaces).
+**Accent color.** The Development surfaces use `#00A5F2` for the comparison-mode interaction (active comparison button + card selection ring), introduced by `Spec_Development_Design.md` v0.2. A unified accent system for focus states and active tabs across every surface is still to be settled.
 
-**No semantic colors defined yet.** Success, error, and warning states will be needed for save indicators, API failures, and validation. To be defined when writing the Design Specs.
+**Semantic colors.** The ui_eval tag colors below (Core / Evolve / Set Aside) act as the creative-curation semantic set. Success, error, and warning states (save indicators, API failures, validation) are still to be defined.
+
+### Development phase colors
+
+Introduced by `Spec_Development_Design.md` v0.2 for the Development surfaces. Per the "no colors outside the token table" rule below, new surface colors are registered here before use.
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| Core tag | `#9CCBAC` | ui_eval bar — story element is Core |
+| Evolve tag | `#F2BA03` | ui_eval bar — story element needs work |
+| Set Aside tag | `#AA5959` | ui_eval bar — story element is parked |
+| Comparison accent | `#00A5F2` | Comparison-mode button (active) + card selection ring |
+| Idea section | `#E4F5FF` | IDEA / DEFINITION section background (Detail View) |
+| Column gradient | `#EEEDED` → `#E8E8E8` | Vertical wash on Development columns and writing containers |
+| Chat panel gradient | `#F6F6F6` → `#E8E8E8` | Vertical wash on the chat panel |
+| Subtitle gray | `#737373` | Phase subtitle text |
 
 ---
 
@@ -78,7 +93,7 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 - Border: subtle, using Surface Alt (`#E8E8E8`) or light shadow
 - No heavy drop shadows — keep it flat and editorial
 - Card header: Concept Type label in **Barlow 14pt Medium**, Title Case
-- Card body: Concept value in **Domine 14pt Regular**
+- Card body: Concept value in **Aleo 14pt Regular**
 - Image (if present): displayed above or alongside the text content
 - Version indicator: small, subtle (e.g., "v2" in Barlow 12pt)
 
@@ -93,8 +108,8 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 ### Chat Panel
 
 - Messages alternate between user (right-aligned or distinct styling) and assistant (left-aligned)
-- User messages: concise styling, Domine
-- Assistant messages: Domine, may include extracted concept previews
+- User messages: concise styling, Aleo
+- Assistant messages: Aleo, may include extracted concept previews
 - Input area at bottom: text field + send control
 - Full styling TBD in `Spec_Workspace_Design.md`
 
@@ -104,13 +119,17 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 - Lighter, more casual feel than Concept Cards
 - Full styling TBD in `Spec_Discovery_Design.md`
 
+### Development Surfaces
+
+The Development phase introduces its own components — story element cards with the ui_eval tag bar, the three-column pillar canvas, the writing-area Detail View, and the Compare View. `Spec_Development_Design.md` (§3, §7) is the source of truth for their layout, tokens, and states.
+
 ---
 
 ## Do / Don't
 
 **Do:**
 - Use generous white space — let the content breathe
-- Use Barlow for structure, Domine for content — consistently
+- Use Barlow for structure, Aleo for content — consistently
 - Keep cards clean and minimal — white background, subtle borders
 - Match the "editorial sketchbook" feel in every surface
 - Stay within the 4px–12px corner radius range
@@ -119,7 +138,7 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 - Don't use colors not in the token table without adding them here first
 - Don't use type sizes below 12pt or above 36pt — ever (Hard Rule)
 - Don't use sharp corners (0px radius) or full circles on cards
-- Don't add heavy shadows, gradients, or decorative elements
+- Don't add heavy shadows or decorative elements — surface gradients are limited to the subtle vertical washes defined in `Spec_Development_Design.md`
 - Don't make it look like a dashboard tool or enterprise software
 - Don't use emoji or icons as decoration — if icons are added, they should be functional
 
@@ -128,6 +147,6 @@ Story Engine should feel like a **sketchbook, not a spreadsheet**. The aesthetic
 ## Asset References
 
 - **Design file:** None yet — visual design is driven by this document and the PRD
-- **Icon set:** [TBD — to be chosen before Phase C]
+- **Icon set:** Bespoke SVGs in `assets/icons/` and `assets/buttons/`, added per surface as needed
 - **Font source:** Google Fonts (Barlow, Aleo)
 - **Token source of truth:** This file (`docs/design/DESIGN.md`) until a code-level theme file is created

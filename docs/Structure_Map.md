@@ -2,7 +2,7 @@
 
 **Feature organization, spec inventory, and writing order.**
 
-Version 0.2 | May 2026
+Version 0.3 | May 2026
 
 **CONFIDENTIAL**
 
@@ -13,6 +13,7 @@ Version 0.2 | May 2026
 |---------|------|---------|
 | 0.1 | Apr 2026 | Initial structure. Six feature folders, one foundation folder, full writing order. |
 | **0.2** | **May 2026** | **Rewritten for PRD v0.3 pipeline model. `builder/` becomes `workspace/`. New `discovery/` feature folder. Spec inventory and writing order updated. `start-screen/` simplified. Phase management added to foundation.** |
+| **0.3** | **May 2026** | **Added `development/` feature folder with `Spec_Development_Design.md`. Development is now its own surface (three-column pillar view + Detail View + Compare View) rather than a mode of `workspace/`. Spec inventory updated to 15 Level 2 specs. Writing order updated. Two open questions resolved.** |
 
 ---
 
@@ -38,7 +39,8 @@ Before looking at the file tree, here's why the features are split the way they 
 | `start-screen/` | The entry point. Two options: "Start New Story" and "Open Existing Project." Could be built and tested with just the foundation. |
 | `discovery/` | The freeform ideation phase: canvas, notes, AI brainstorming, consolidation. This is a distinct interaction model (post-it canvas) from the structured workspace. It exists before Concept Types are introduced. |
 | `chat-engine/` | The AI pipeline: concept extraction, prompt design, phase-adaptive behavior, Anthropic API integration. This is pure logic — no UI. The workspace and discovery surfaces consume it, but it exists independently. |
-| `workspace/` | The unified workspace used during Development and Refinement. Chat panel + card dashboard + dimension tracking. One workspace, not three separate screens. Replaces the v0.2 `builder/` folder. |
+| `development/` | The Development phase surface: three-column pillar view (Theme/World/Character), Story Element Detail View with writing area, and Compare View. Its own interaction model (pillar columns + element expansion + comparison) distinct from both Discovery's freeform canvas and the workspace's card dashboard. |
+| `workspace/` | The unified workspace used during Refinement (and potentially shared components with Development). Chat panel + card dashboard + dimension tracking. Replaces the v0.2 `builder/` folder. |
 | `insights/` | The cross-dimension analysis engine and its dedicated Insights Panel UI. Could be built after the workspace works without it — it's additive, not structural. |
 | `images/` | DALL-E integration and user image uploads. The workspace works without images (text-only cards). Images are an enrichment layer added on top. |
 | `export/` | .md export, JSON export, and the local MCP Server. Part of the Production Handoff phase. Entirely separate from the creative workflow — it consumes the data model but doesn't change how the workspace works. |
@@ -48,7 +50,7 @@ Before looking at the file tree, here's why the features are split the way they 
 | Not a folder | Reason |
 |--------------|--------|
 | `world/`, `character/`, `conflict/` | These are creative dimensions within the workspace, not separate features. They share identical architecture — different default Concept Types, same UI and behavior. |
-| `refinement/` | Refinement is a phase of the workspace, not a separate feature. The workspace adapts its behavior (Storyline types appear, AI becomes an editor) but the surface is the same. |
+| `refinement/` | Refinement reuses the workspace pattern. The workspace adapts its behavior (Storyline types appear, AI becomes an editor) but the surface is the same. |
 | `concept-types/` | Concept Types are part of the data model (lives in `foundation/`). They're referenced everywhere but don't have their own UI or logic surface. |
 | `versioning/` | Concept versioning is a behavior of the Concept entity, not a standalone system. It lives in the foundation data model and surfaces through the workspace's card components. |
 | `chat-ui/` | The chat interface is a component inside `workspace/` and `discovery/`. The AI pipeline logic lives separately in `chat-engine/`. |
@@ -93,6 +95,19 @@ docs/
 │       ├── Logic_NoteManagement.md              ← create, edit, arrange, delete notes
 │       ├── Logic_Consolidation.md               ← AI thematic grouping of notes
 │       └── Logic_CreativeGravity.md             ← detecting character-first vs. world-first vs. conflict-first
+│
+├── development/
+│   ├── Spec_Development_Design.md                ← Design Spec (v0.2)
+│   ├── screens/
+│   │   ├── Screen_DevelopmentCanvas.md            ← three-column pillar view
+│   │   └── Screen_ElementDetail.md                ← focused writing environment
+│   └── components/
+│       ├── Component_StoryElementSmall.md          ← glance card (canvas + related panel)
+│       ├── Component_WritingArea.md                ← IDEA + DEFINITION sections
+│       ├── Component_RelatedElements.md            ← connected elements panel
+│       ├── Component_CompareView.md                ← side-by-side element comparison
+│       ├── Component_CreativeTagBar.md             ← ui_eval (Core/Evolve/Set Aside)
+│       └── Component_ComparisonModeButton.md       ← canvas toggle for comparison selection
 │
 ├── chat-engine/
 │   ├── Spec_ChatEngine.md                       ← Tech Spec
@@ -162,15 +177,16 @@ Every Level 2 spec in the project, with its template type and what PRD sections 
 |-----------|-------------|-----------|--------|
 | `Spec_StartScreen_Design.md` | Start Screen: "Start New Story" + "Open Existing Project" | PRD §5.1 | `start-screen/` |
 | `Spec_Discovery_Design.md` | Discovery canvas: freeform notes, arrangement, consolidation review | PRD §5.2 | `discovery/` |
-| `Spec_Workspace_Design.md` | Unified workspace: chat panel + card dashboard, dimension tracking, Development + Refinement behavior | PRD §5.3, §5.4, §5.6, §5.8 | `workspace/` |
+| `Spec_Development_Design.md` | Development phase: three-column pillar view, Story Element Detail View, Compare View, Related Elements panel, text highlighting, contextual prompts | PRD §5.3, §5.4 | `development/` |
+| `Spec_Workspace_Design.md` | Unified workspace for Refinement: chat panel + card dashboard, dimension tracking, beat framework | PRD §5.4, §5.6, §5.8 | `workspace/` |
 | `Spec_InsightsPanel_Design.md` | Insights Panel UI: inbox-style card list, dismiss/accept/act workflow | PRD §5.7 | `insights/` |
 
 ### Totals
 
 - 9 Tech Specs (was 8 — added Discovery Engine)
-- 4 Design Specs (was 3 — added Discovery Design)
-- 13 Level 2 specs total (was 11)
-- ~22 Level 3 Buildable Units (anticipatory — will change)
+- 5 Design Specs (was 4 — added Development Design)
+- 15 Level 2 specs total (was 13)
+- ~26 Level 3 Buildable Units (anticipatory — will change)
 
 ---
 
@@ -195,6 +211,10 @@ start-screen/               discovery/
            chat-engine/
              └── Spec_ChatEngine.md  ← Depends on DataModel (writes Concepts)
                    │                   + DiscoveryEngine (phase-adaptive behavior)
+                   ▼
+           development/
+             └── Spec_Development_Design.md ← Depends on ChatEngine + DataModel
+                   │                          + DiscoveryEngine (consolidation output)
                    ▼
            workspace/
              └── Spec_Workspace_Design.md  ← Depends on ChatEngine + DataModel
@@ -224,7 +244,7 @@ This is the recommended order for writing Level 2 specs. It follows the dependen
 
 | Order | Spec | Status | Rationale |
 |-------|------|--------|-----------|
-| 1 | `Spec_DataModel.md` | ✅ v0.2 complete (NoteColor + GapAnalysis additions pending v0.3 rollup) | Every other spec references these entities. Adds Discovery Note, Phase State, Conflict dimension defaults, renames Builder → Dimension. |
+| 1 | `Spec_DataModel.md` | ✅ v0.4 complete (Discovery NoteColor / GapAnalysis roll-up still pending) | Every other spec references these entities. v0.3 renamed Conflict → Theme; v0.4 added the `definition` / `creativeTag` Concept fields. |
 | 2 | `Spec_DataPersistence.md` | ✅ v0.2 complete | Resolves PRD Open Question #3 (project file format). Discovery Notes and Phase State persistence covered. |
 | 3 | `Spec_Navigation.md` | ✅ v0.2 complete (needs v0.3 revision for split entry flow — Splash → Chooser → Step Menu) | Routing + phase transitions. Builder switching replaced by phase movement and dimension tracking in unified workspace. |
 
@@ -248,7 +268,8 @@ This is the recommended order for writing Level 2 specs. It follows the dependen
 | 7 | `Spec_SplashScreen_Design.md` ✅ v0.1 | First of the entry-flow trio. Full-bleed video + centered title; tap-anywhere-to-continue. |
 | 7b | `Spec_ProjectChooser_Design.md` ✅ v0.1 | Second of the entry-flow trio. Two rows ("Open existing Story" / "Start New Story") with italic annotations. |
 | 7c | `Spec_StepMenu_Design.md` ✅ v0.1 | Third of the entry-flow trio. Three phase rows (Discovery / Development / Refinement) with sequential locking. |
-| 8 | `Spec_Workspace_Design.md` | The most complex surface — unified workspace covering both Development and Refinement phases. Chat panel, card dashboard, dimension tracking, phase-adaptive card behavior. Write after the Chat Engine spec so you know what the chat panel needs to display. |
+| 7d | `Spec_Development_Design.md` ✅ v0.2 | Development phase surface: three-column pillar view, Story Element Detail View with IDEA + DEFINITION writing areas, Compare View, Related Elements panel. Reconciled against Figma designs. |
+| 8 | `Spec_Workspace_Design.md` | The Refinement surface — unified workspace covering both Development and Refinement phases. Chat panel, card dashboard, dimension tracking, phase-adaptive card behavior. Write after the Chat Engine spec so you know what the chat panel needs to display. |
 
 ### Phase E — Enrichment (write fifth)
 
@@ -285,11 +306,12 @@ Some Buildable Units are used by multiple features. The rule: put it where it wa
 
 | Unit | Home Folder | Also Used By |
 |------|------------|-------------|
+| `Component_StoryElementSmall.md` | `development/components/` | `workspace/` (if glance cards appear in Refinement) |
 | `Component_ConceptCard.md` | `workspace/components/` | `insights/` (Insight cards reference Concept cards) |
 | `Logic_ConceptVersioning.md` | `foundation/logic/` | `workspace/` (versioning UI), `chat-engine/` (deciding edit vs. new version) |
 | `Logic_ConceptTypeCreation.md` | `chat-engine/logic/` | `workspace/` (manual type creation from dashboard) |
 | `Logic_PhaseTransitions.md` | `foundation/logic/` | `discovery/` (consolidation triggers phase transition), `workspace/` (phase nav UI) |
-| `Component_ChatPanel.md` | `workspace/components/` | `discovery/` (brainstorming chat, if included on canvas) |
+| `Component_ChatPanel.md` | `workspace/components/` | `discovery/` (brainstorming chat on canvas), `development/` (chat in canvas + Detail View) |
 
 ---
 
@@ -313,9 +335,9 @@ Some Buildable Units are used by multiple features. The rule: put it where it wa
 
 ## 9. Open Questions
 
-1. **Workspace screen vs. phase-specific screens:** The current structure assumes one `Screen_Workspace.md` that handles both Development and Refinement phases through phase-adaptive behavior. If the Level 2 Design Spec reveals significant differences between phases (different layouts, not just different card sets), this might split into two screen docs. To be resolved when writing `Spec_Workspace_Design.md`.
+1. **~~Workspace screen vs. phase-specific screens:~~** ✅ Resolved. Development has its own surface (`development/` folder with `Spec_Development_Design.md`). The workspace (`Spec_Workspace_Design.md`) now covers Refinement only. The two phases have sufficiently different interaction models (pillar columns + element expansion vs. card dashboard + beat framework) to justify separate specs.
 
-2. **Discovery chat placement:** Does the Discovery canvas include a chat panel for AI brainstorming, or is chat only available when the user transitions to Development? If chat is on the canvas, `Component_ChatPanel.md` is shared between `discovery/` and `workspace/`. To be resolved when writing `Spec_Discovery_Design.md`.
+2. **~~Discovery chat placement:~~** ✅ Resolved. Discovery includes a chat panel on the canvas for brainstorming + stream-of-consciousness extraction (per `Spec_Discovery_Design.md` v0.1). `Component_ChatPanel.md` is shared across `discovery/`, `development/`, and `workspace/`.
 
 3. **Export UI surface:** The current structure has no Design Spec for the export/Production Handoff flow. If the readiness review and export experience need their own screen or modal, a `Spec_ProductionHandoff_Design.md` will be added. To be resolved when writing `Spec_Export.md`.
 

@@ -2,7 +2,7 @@
 
 **Systems Design & Data Architecture**
 
-Version 0.3 | May 2026 | Spec
+Version 0.4 | May 2026 | Spec
 
 **CONFIDENTIAL**
 
@@ -14,6 +14,7 @@ Version 0.3 | May 2026 | Spec
 | 0.1 | Apr 2026 | Initial draft. 7 entities, 35 default ConceptTypes, Builder enum, ID strategy, relationship graph. |
 | **0.2** | **May 2026** | **Revised for PRD v0.3 pipeline model. Builder enum replaced by Dimension enum + Phase enum. Two new entities: DiscoveryNote and PhaseState. Default ConceptTypes reorganized: 11 World + 13 Character + 9 Conflict + 8 Storyline (41 total, up from 35). ChatMessage scoped by phase instead of builder. Project entity updated: `initialBuilder` removed, `currentPhase` added.** |
 | **0.3** | **May 2026** | **Dimension rename: Conflict → Theme, Storyline dimension removed. Dimension enum now three values: WORLD \| CHARACTER \| THEME. Default ConceptTypes revised: 11 World + 13 Character + 5 Theme (29 total, down from 41). Nine Conflict types and eight Storyline types removed — Conflict types become Development-phase AI conversational tools, Storyline types move to the Refinement beat framework (future spec). New Theme types: Theme, Tone, Subtext, Motif / Symbol, Stakes. See Phase_Architecture.md for the full rationale.** |
+| **0.4** | **May 2026** | **Added the `CreativeTag` enum (`CORE \| EVOLVE \| SET_ASIDE`) and two fields to the Concept entity: `definition: string \| null` (the user's expanded written definition, authored in the Development phase) and `creativeTag: CreativeTag` (the Core/Evolve/Set Aside curation tag, default `CORE`). Per `Spec_Development_Design.md` §6.1. The `NoteColor` / `GapAnalysis` / `ConceptTypeMapping` roll-up from the Discovery specs remains pending a future revision.** |
 
 ---
 
@@ -119,6 +120,22 @@ type ChatRole = "user" | "assistant";
 ```
 
 Lowercase to match the Anthropic API convention.
+
+### CreativeTag
+
+The Core/Evolve/Set Aside curation tag a story element carries during the Development phase. Drives the ui_eval indicator bar on Development surfaces.
+
+```typescript
+type CreativeTag = "CORE" | "EVOLVE" | "SET_ASIDE";
+```
+
+| Code Value | Display Label | Meaning |
+|------------|--------------|---------|
+| `CORE` | Core | Central to the story — this stays |
+| `EVOLVE` | Evolve | Needs more work or rethinking |
+| `SET_ASIDE` | Set Aside | Parked — not discarded, just not active |
+
+See `Spec_Development_Design.md` §3.1 for the visual treatment (the ui_eval bar) and §6.1 for the field definition.
 
 ---
 
@@ -275,6 +292,8 @@ interface Concept {
   dimension: Dimension;          // WORLD | CHARACTER | THEME
   currentVersionId: string;      // ver_[nanoid] — points to the active version
   versions: ConceptVersion[];    // all versions, ordered by versionNumber ascending
+  definition: string | null;    // user-written expanded definition (Development phase); null until written
+  creativeTag: CreativeTag;      // CORE | EVOLVE | SET_ASIDE — curation tag, defaults to CORE
   relatedConceptIds: string[];   // con_[nanoid] IDs of related concepts (co-extracted, cross-dimension links)
   sourceMessageId: string | null; // msg_[nanoid] of the chat message that created this concept (null if manual)
   imageIds: string[];            // img_[nanoid] IDs of attached images
@@ -290,6 +309,8 @@ interface Concept {
 - **`currentVersionId` points to the active version.** Typically the latest, but the user could browse to an older version and pin it as current.
 - **`dimension` is denormalized.** It matches the `dimension` of the linked ConceptType. This redundancy allows filtering by dimension without joining to ConceptType on every render.
 - **Position is workspace-relative.** Persisted on drag-end only (per `Spec_DataPersistence.md`).
+- **`definition` holds the user's expanded writing.** Authored in the Development phase, kept separate from the version `value` (the Discovery summary) so the original summary is preserved while the user writes a deeper definition. Defaults to `null` until the user writes one. See `Spec_Development_Design.md` §3.2, §6.1.
+- **`creativeTag` is the Core/Evolve/Set Aside curation state.** Defaults to `CORE` for newly created Concepts. Maps to the ui_eval bar color on Development surfaces. The mechanism for changing it is TBD in implementation (see `Spec_Development_Design.md` §8).
 
 ### Cross-dimension concepts
 
@@ -535,7 +556,7 @@ These rules apply across the entire data model and cannot be overridden by indiv
 3. **No circular references.** Entities reference each other by ID string only. The relationship graph is fully serializable as flat JSON.
 4. **IDs are strings, always prefixed.** Never numeric, never UUID, never bare nanoid. The prefix is part of the ID.
 5. **A new Concept must always have exactly one ConceptVersion.** Concept creation and first-version creation are atomic.
-6. **Enum values use SCREAMING_SNAKE_CASE.** `WORLD`, `CHARACTER`, `THEME`, `DISCOVERY`, `DEVELOPMENT`, `REFINEMENT`, `PRODUCTION`, `SUGGESTION`, `CONNECTION`, `CONFLICT` (insight type), `PENDING`, `ACCEPTED`, `DISMISSED`, `GENERATED`, `UPLOADED`.
+6. **Enum values use SCREAMING_SNAKE_CASE.** `WORLD`, `CHARACTER`, `THEME`, `DISCOVERY`, `DEVELOPMENT`, `REFINEMENT`, `PRODUCTION`, `SUGGESTION`, `CONNECTION`, `CONFLICT` (insight type), `PENDING`, `ACCEPTED`, `DISMISSED`, `GENERATED`, `UPLOADED`, `CORE`, `EVOLVE`, `SET_ASIDE`.
 7. **Object keys use camelCase.** `projectId`, `conceptTypeId`, `versionNumber`, `relatedConceptIds`.
 
 ---
@@ -579,6 +600,7 @@ These rules apply across the entire data model and cannot be overridden by indiv
 | `Spec_Navigation.md` | Uses Phase enum for phase transitions, Project entity for routing | §3, §4 |
 | `Spec_DiscoveryEngine.md` | Creates DiscoveryNotes, populates DiscoveryClusters, sets creativeGravity | §5, §6 |
 | `Spec_ChatEngine.md` | Creates Concepts, ConceptVersions, ChatMessages. References ConceptTypes. | §7–§9, §11 |
+| `Spec_Development_Design.md` | Renders Concepts as story element cards; reads/writes `definition` and `creativeTag` | §3, §8 |
 | `Spec_Workspace_Design.md` | Renders Concepts as cards, uses Dimension for filtering, uses Phase for behavior | §3, §8 |
 | `Spec_InsightsEngine.md` | Creates Insights referencing Concepts | §12 |
 | `Spec_ImageGeneration.md` | Creates Images attached to Concepts or DiscoveryNotes | §10 |
@@ -604,6 +626,7 @@ type InsightType = "SUGGESTION" | "CONNECTION" | "CONFLICT";
 type InsightStatus = "PENDING" | "ACCEPTED" | "DISMISSED";
 type ImageSource = "GENERATED" | "UPLOADED";
 type ChatRole = "user" | "assistant";
+type CreativeTag = "CORE" | "EVOLVE" | "SET_ASIDE";
 
 // --- Entities ---
 
@@ -665,6 +688,8 @@ interface Concept {
   dimension: Dimension;
   currentVersionId: string;
   versions: ConceptVersion[];
+  definition: string | null;
+  creativeTag: CreativeTag;
   relatedConceptIds: string[];
   sourceMessageId: string | null;
   imageIds: string[];
@@ -792,7 +817,7 @@ interface Insight {
 Project: Story Engine | Repo: [repo path] | Branch: main
 
 Spec file: docs/foundation/Spec_DataModel.md
-→ Read this spec (v0.2) for all entity definitions and constraints.
+→ Read this spec (v0.4) for all entity definitions and constraints.
 
 Also read before starting:
 - docs/HARD_RULES.md (non-negotiable constraints)

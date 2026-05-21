@@ -439,6 +439,10 @@ This is the recommended order for building, driven by dependencies:
 - Cloud deployment of MCP Server (local-only in v1)
 - Cross-device project syncing (local-only in v1)
 
+### Future Expansion Paths (Noted, Not Planned)
+
+- **In-App Writing / Full Story Composition:** By the time the user completes Development and Refinement, they will have written substantial content — detailed definitions, character descriptions, world-building paragraphs — organized along story beats. Story Engine could offer a continued writing environment where the story bible serves as always-available AI context, rather than requiring the user to export and switch to another tool. This shapes how Development's writing area and definition storage are designed (as a genuine writing environment, not a form field). See `Spec_Development_Design.md` §12 for detail.
+
 ---
 
 ## 12. Resolved Decisions

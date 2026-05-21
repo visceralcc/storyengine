@@ -1,6 +1,6 @@
 # Story Engine — Build Status
 
-**Last updated:** May 21, 2026 (Development UI Phase 3 — Compare View)
+**Last updated:** May 21, 2026 (Development UI Phases 1–3 complete; project docs synced)
 
 ---
 
@@ -30,7 +30,7 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 
 | Phase | Order | Spec | Status |
 |-------|-------|------|--------|
-| A — Foundation | 1 | `Spec_DataModel.md` | ✅ Complete (v0.2) |
+| A — Foundation | 1 | `Spec_DataModel.md` | ✅ Complete (v0.4) |
 | A — Foundation | 2 | `Spec_DataPersistence.md` | ✅ Complete (v0.2) |
 | A — Foundation | 3 | `Spec_Navigation.md` | ✅ Complete (v0.2) |
 | B — Discovery | 4 | `Spec_DiscoveryEngine.md` | ✅ Complete (v0.1) |
@@ -122,7 +122,9 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 
 ## Data Model Additions Pending
 
-The Discovery Engine spec (v0.1) introduces `GapAnalysis` and `ConceptTypeMapping` interfaces and extends `PhaseState.discovery` with a `gapAnalysis` field. The Discovery Design spec (v0.1) introduces `NoteColor` type and adds `color: NoteColor` to the `DiscoveryNote` interface. Both additions need to be incorporated into `Spec_DataModel.md` in a future revision. (The v0.3 revision addressed Dimension/ConceptType changes only.)
+`Spec_DataModel.md` v0.4 added the `CreativeTag` enum and the `definition` / `creativeTag` fields on the Concept entity (per `Spec_Development_Design.md` §6.1) — these are now reconciled with `src/models/types.ts`.
+
+Still pending a future revision: the Discovery Engine spec (v0.1) `GapAnalysis` and `ConceptTypeMapping` interfaces plus the `PhaseState.discovery.gapAnalysis` field, and the Discovery Design spec (v0.1) `NoteColor` type with `color: NoteColor` on `DiscoveryNote`. All of these already exist in `src/models/types.ts`; the spec needs to catch up.
 
 ---
 
@@ -142,7 +144,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | `OVERVIEW.md` | Companion | ✅ Updated for v0.3 |
 | `Templates_SpecDocs.md` | Templates | ✅ Complete (v0.1) |
 | `Structure_Map.md` | Structure | ✅ Complete (v0.2) |
-| foundation/Spec_DataModel.md | Tech Spec (Level 2) | ✅ Complete (v0.3) |
+| foundation/Spec_DataModel.md | Tech Spec (Level 2) | ✅ Complete (v0.4) |
 | `foundation/Spec_DataPersistence.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
 | `foundation/Spec_Navigation.md` | Tech Spec (Level 2) | ✅ Complete (v0.2) |
 | `discovery/Spec_DiscoveryEngine.md` | Tech Spec (Level 2) | ✅ Complete (v0.1) |
@@ -225,6 +227,6 @@ Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
 **Companion doc updates still pending:**
 
-- **DataModel v0.4.** Roll up the in-code `NoteColor` type and the `GapAnalysis` / `ConceptTypeMapping` interfaces from `Spec_Discovery_Design.md` v0.1 and `Spec_DiscoveryEngine.md` v0.1.
+- **DataModel — Discovery roll-up.** A future revision should roll up the in-code `NoteColor` type and the `GapAnalysis` / `ConceptTypeMapping` interfaces from `Spec_Discovery_Design.md` v0.1 and `Spec_DiscoveryEngine.md` v0.1. (DataModel v0.4 added the Development `definition` / `creativeTag` fields; the Discovery additions are still outstanding.)
 
-- **Navigation spec update.** `Spec_Navigation.md` (v0.2) defines `/` as a single "Start Screen" route. The entry flow is now three screens (Splash → Project Chooser → Step Menu) at routes `/`, `/choose`, and `/project/:projectId/steps`. Needs a v0.3 revision.
+- **Navigation spec update.** `Spec_Navigation.md` (v0.2) defines `/` as a single "Start Screen" route. The implemented routing is now `/` (Splash), `/choose` (Project Chooser), `/project/:projectId/steps` (Step Menu), `/project/:projectId/discovery`, and `/project/:projectId/development` (added this session; reachable from the now-unlocked Step Menu row). The Development screen also swaps between its Canvas / Detail / Compare surfaces internally without a route change. Needs a v0.3 revision to capture the full route table.
