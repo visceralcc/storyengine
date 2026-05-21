@@ -1,12 +1,12 @@
 # Story Engine — Build Status
 
-**Last updated:** May 21, 2026 (Development UI Phase 1 — canvas layout)
+**Last updated:** May 21, 2026 (Development UI Phase 2 — Detail View)
 
 ---
 
 ## Current Phase: Implementing (Chat Engine Phases 1–7 complete)
 
-Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and **all seven Chat Engine phases** are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine is now end-to-end ready: streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly with 40-message / 50-note caps (Phase 2), Discovery response parser + viewport-placement extraction with collision avoidance (Phase 3), Development/Refinement response parsing + Concept/ConceptType/Version creation + REFINE/RETHINK refinement (Phase 4), custom ConceptType creation guardrails (Phase 5), Development opening-message generator + gap-aware system prompt assembly (Phase 6), and Refinement integration with Storyline ConceptTypes + editorial-voice prompt (Phase 7). UI wire-up — connecting the Discovery chat panel and a Workspace surface to the engine — is the next major track. The Development Canvas UI is now under construction: Phase 1 (three-column pillar layout, story element cards with ui_eval bars, phase header, canvas chat panel, comparison-mode button) is complete.
+Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). DataModel Phase 1, Discovery Engine Phase 1, DataPersistence Phases 1–2, and **all seven Chat Engine phases** are complete with passing unit tests. The full entry flow UI (Splash → Project Chooser → Step Menu) is built and committed. The Discovery Screen UI shell is complete end-to-end and now persisted: notes, clusters, and chat messages load from disk on mount and save back on every change via `projectStore`. The Project Chooser saves new projects and lists saved ones inline. The Chat Engine is now end-to-end ready: streaming Anthropic API client (Phase 1), phase-adaptive system prompts + context assembly with 40-message / 50-note caps (Phase 2), Discovery response parser + viewport-placement extraction with collision avoidance (Phase 3), Development/Refinement response parsing + Concept/ConceptType/Version creation + REFINE/RETHINK refinement (Phase 4), custom ConceptType creation guardrails (Phase 5), Development opening-message generator + gap-aware system prompt assembly (Phase 6), and Refinement integration with Storyline ConceptTypes + editorial-voice prompt (Phase 7). UI wire-up — connecting the Discovery chat panel and a Workspace surface to the engine — is the next major track. The Development UI is now under construction: Phase 1 (three-column canvas, story element cards, ui_eval bars, phase header, comparison-mode button) and Phase 2 (Story Element Detail View — writing area, IDEA + DEFINITION sections, pillar reassignment, Related Elements panel, dissolve navigation) are complete.
 
 ---
 
@@ -116,6 +116,7 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Core / Evolve / Set Aside | Three-state creative tag on story elements: Core (central), Evolve (needs work), Set Aside (parked) | Development Brief |
 | Development canvas sample data | When a project has no consolidated Concepts, the canvas renders a Ready Player One sample dataset; real Concepts take over automatically once consolidation is wired | Development UI Phase 1 |
 | Development reachable from Step Menu | "Development" row on the Step Menu unlocked, routes to `/project/:id/development` | Development UI Phase 1 |
+| Detail View is an in-screen mode | The Story Element Detail View is a state within the Development screen (dissolve swap with the canvas), not a separate route — matches "replaces the canvas view" (Spec §3.2) | Development UI Phase 2 |
 
 ---
 
@@ -195,7 +196,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | Chat Engine | 7 — Refinement chat integration | ✅ Complete | End-to-end integration tests in `__tests__/refinementChat.test.ts` (prompt + Storyline context widening already shipped in Phase 2) |
 | **Development UI** | **Data model — `definition` + `creativeTag`** | **✅ Complete** | **`src/models/types.ts`, `src/models/factories.ts`** |
 | **Development UI** | **Phase 1 — Canvas layout + card rendering** | **✅ Complete** | **`app/project/[projectId]/development.tsx`, `src/development/storyElements.ts`, `app/_layout.tsx`, `app/project/[projectId]/steps.tsx`** |
-| Development UI | Phase 2 — Story Element Detail View | ⬜ | not started |
+| **Development UI** | **Phase 2 — Story Element Detail View** | **✅ Complete** | **`app/project/[projectId]/development.tsx`, `assets/icons/icon_pencil.svg`** |
 | Development UI | Phase 3 — Compare View + comparison flow | ⬜ | not started |
 | Development UI | Phase 4 — Chat interactions (highlighting, prompts) | ⬜ | not started |
 
@@ -205,7 +206,7 @@ Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
 ## What's Next
 
-**Immediate next step:** Development UI Phase 2 — the Story Element Detail View (writing area with IDEA + IDEA THOUGHT / DEFINITION sections, tappable pillar header, Related Elements panel, dismiss navigation via the × button). Phase 1 (Development Canvas) is complete.
+**Immediate next step:** Development UI Phase 3 — Compare View (side-by-side elements entered from the canvas comparison-mode button via two-card selection, with the right→left→canvas dismiss flow) and the manual connection that comparison creates between the two elements. Phases 1–2 (Development Canvas + Story Element Detail View) are complete.
 
 **Also completed this session:**
 - `Spec_Development_Design.md` v0.2 — reconciled against four Figma screens (Canvas, Story Element Small, Detail View, Compare View). 6 of 7 open questions resolved. Only remaining open question: Refinement phase unlock trigger.
