@@ -1,9 +1,10 @@
 /**
  * Development screen — Phase 2 of the creative pipeline.
  *
- * Two surfaces live here, swapped with a dissolve transition:
+ * Three surfaces live here, swapped with a dissolve transition:
  *  - Development Canvas — three-column overview of every story element.
  *  - Story Element Detail View — focused writing environment for one element.
+ *  - Compare View — two story elements side by side for coherence checks.
  *
  * Spec: docs/development/Spec_Development_Design.md §3, §4, §5, §7.
  *
@@ -11,14 +12,15 @@
  *  - Phase 1 ✅ — canvas layout and card rendering.
  *  - Phase 2 ✅ — Story Element Detail View (writing area, IDEA + DEFINITION
  *    sections, pillar reassignment, Related Elements panel, dismiss nav).
- *  - Phase 3 — Compare View + comparison-mode flow.
+ *  - Phase 3 ✅ — Compare View + comparison-mode flow (two-card selection,
+ *    manual connection creation, right→left→canvas dismiss).
  *  - Phase 4 — chat AI wiring, text highlighting, contextual prompts.
  *
  * The chat panel is local-only (no AI / no persistence yet); edits to story
  * elements live in memory only. Both arrive in a later phase.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import {
   Animated,
@@ -64,6 +66,7 @@ const CHAT_GRADIENT_BOTTOM = '#E8E8E8';
 const IDEA_BG = '#E4F5FF';
 const AVATAR_BG = '#E8E8E8';
 const SEND_BORDER = '#656363';
+const COMPARE_BLUE = '#00A5F2';
 
 const TAG_COLOR: Record<CreativeTag, string> = {
   CORE: '#9CCBAC',
@@ -160,20 +163,28 @@ type DevelopmentWorkspaceProps = {
   projectFile: ProjectFile;
 };
 
+/** Which surface the Development screen is currently showing. */
+type DevView =
+  | { mode: 'canvas' }
+  | { mode: 'detail'; elementId: string }
+  | { mode: 'compare'; leftId: string; rightId: string };
+
 function DevelopmentWorkspace({ projectId, projectFile }: DevelopmentWorkspaceProps) {
   // Real story elements come from Discovery consolidation; until that pipeline
   // is wired, this resolves to the Ready Player One sample dataset. Held in
-  // state so the Detail View can edit titles, definitions, and pillars.
+  // state so the Detail and Compare views can edit titles, definitions, and
+  // pillars, and so comparison can record new connections.
   const [elements, setElements] = useState<StoryElement[]>(() => getStoryElements(projectFile));
   const [comparisonActive, setComparisonActive] = useState(false);
-  const [activeElementId, setActiveElementId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<string[]>([]);
+  const [view, setView] = useState<DevView>({ mode: 'canvas' });
 
-  // Dissolve transition between the canvas and the Detail View (Spec §3.2):
-  // fade the current surface out, swap, fade the new surface in.
+  // Dissolve transition between surfaces (Spec §3.2): fade the current surface
+  // out, swap, fade the next one in.
   const fade = useRef(new Animated.Value(1)).current;
-  const navigateTo = (next: string | null) => {
+  const navigateTo = (next: DevView) => {
     Animated.timing(fade, { toValue: 0, duration: 150, useNativeDriver: false }).start(() => {
-      setActiveElementId(next);
+      setView(next);
       Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: false }).start();
     });
   };
@@ -182,33 +193,102 @@ function DevelopmentWorkspace({ projectId, projectFile }: DevelopmentWorkspacePr
     setElements((prev) => prev.map((el) => (el.id === id ? { ...el, ...patch } : el)));
   };
 
-  const activeElement = activeElementId
-    ? elements.find((el) => el.id === activeElementId) ?? null
-    : null;
+  // Comparison records a two-way connection between the selected elements
+  // (Spec §4.5 "Manual connection creation").
+  const connectElements = (a: string, b: string) => {
+    setElements((prev) =>
+      prev.map((el) => {
+        if (el.id === a && !el.relatedIds.includes(b)) {
+          return { ...el, relatedIds: [...el.relatedIds, b] };
+        }
+        if (el.id === b && !el.relatedIds.includes(a)) {
+          return { ...el, relatedIds: [...el.relatedIds, a] };
+        }
+        return el;
+      }),
+    );
+  };
+
+  const handleToggleComparison = () => {
+    setComparisonActive((active) => {
+      if (active) setSelection([]);
+      return !active;
+    });
+  };
+
+  // In comparison mode a card tap selects the element (Spec §5.1); the second
+  // selection opens the Compare View. Otherwise a tap opens the Detail View.
+  const handleCardPress = (element: StoryElement) => {
+    if (!comparisonActive) {
+      navigateTo({ mode: 'detail', elementId: element.id });
+      return;
+    }
+    if (selection.includes(element.id)) {
+      setSelection(selection.filter((id) => id !== element.id));
+      return;
+    }
+    const next = [...selection, element.id];
+    if (next.length < 2) {
+      setSelection(next);
+      return;
+    }
+    const [leftId, rightId] = next;
+    connectElements(leftId, rightId);
+    setSelection([]);
+    setComparisonActive(false);
+    navigateTo({ mode: 'compare', leftId, rightId });
+  };
+
+  const findElement = (id: string) => elements.find((el) => el.id === id) ?? null;
+
+  let surface: ReactNode;
+  if (view.mode === 'detail') {
+    const element = findElement(view.elementId);
+    if (element) {
+      surface = (
+        <StoryElementDetailView
+          key={`detail-${element.id}`}
+          projectId={projectId}
+          element={element}
+          allElements={elements}
+          onDismiss={() => navigateTo({ mode: 'canvas' })}
+          onNavigate={(id) => navigateTo({ mode: 'detail', elementId: id })}
+          onUpdate={updateElement}
+        />
+      );
+    }
+  } else if (view.mode === 'compare') {
+    const left = findElement(view.leftId);
+    const right = findElement(view.rightId);
+    if (left && right) {
+      surface = (
+        <CompareView
+          key={`compare-${left.id}-${right.id}`}
+          projectId={projectId}
+          left={left}
+          right={right}
+          onUpdate={updateElement}
+          onDismissRight={() => navigateTo({ mode: 'detail', elementId: left.id })}
+        />
+      );
+    }
+  }
+  if (!surface) {
+    surface = (
+      <DevelopmentCanvas
+        projectId={projectId}
+        elements={elements}
+        comparisonActive={comparisonActive}
+        selectedIds={selection}
+        onToggleComparison={handleToggleComparison}
+        onCardPress={handleCardPress}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.fadeLayer, { opacity: fade }]}>
-        {activeElement ? (
-          <StoryElementDetailView
-            key={activeElement.id}
-            projectId={projectId}
-            element={activeElement}
-            allElements={elements}
-            onDismiss={() => navigateTo(null)}
-            onNavigate={(id) => navigateTo(id)}
-            onUpdate={updateElement}
-          />
-        ) : (
-          <DevelopmentCanvas
-            projectId={projectId}
-            elements={elements}
-            comparisonActive={comparisonActive}
-            onToggleComparison={() => setComparisonActive((v) => !v)}
-            onOpenElement={(el) => navigateTo(el.id)}
-          />
-        )}
-      </Animated.View>
+      <Animated.View style={[styles.fadeLayer, { opacity: fade }]}>{surface}</Animated.View>
     </View>
   );
 }
@@ -221,16 +301,18 @@ type DevelopmentCanvasProps = {
   projectId: string;
   elements: StoryElement[];
   comparisonActive: boolean;
+  selectedIds: string[];
   onToggleComparison: () => void;
-  onOpenElement: (element: StoryElement) => void;
+  onCardPress: (element: StoryElement) => void;
 };
 
 function DevelopmentCanvas({
   projectId,
   elements,
   comparisonActive,
+  selectedIds,
   onToggleComparison,
-  onOpenElement,
+  onCardPress,
 }: DevelopmentCanvasProps) {
   return (
     <View style={styles.surface}>
@@ -245,7 +327,8 @@ function DevelopmentCanvas({
               key={pillar}
               pillar={pillar}
               elements={elements.filter((el) => el.pillar === pillar)}
-              onOpenElement={onOpenElement}
+              selectedIds={selectedIds}
+              onCardPress={onCardPress}
             />
           ))}
         </View>
@@ -310,10 +393,11 @@ function ComparisonButton({ active, onPress }: ComparisonButtonProps) {
 type PillarColumnProps = {
   pillar: Pillar;
   elements: StoryElement[];
-  onOpenElement: (element: StoryElement) => void;
+  selectedIds: string[];
+  onCardPress: (element: StoryElement) => void;
 };
 
-function PillarColumn({ pillar, elements, onOpenElement }: PillarColumnProps) {
+function PillarColumn({ pillar, elements, selectedIds, onCardPress }: PillarColumnProps) {
   const meta = PILLAR_META[pillar];
   return (
     <View style={[styles.column, gradient(COL_GRADIENT_TOP, COL_GRADIENT_BOTTOM)]}>
@@ -330,7 +414,8 @@ function PillarColumn({ pillar, elements, onOpenElement }: PillarColumnProps) {
           <StoryElementCard
             key={element.id}
             element={element}
-            onPress={() => onOpenElement(element)}
+            selected={selectedIds.includes(element.id)}
+            onPress={() => onCardPress(element)}
           />
         ))}
       </ScrollView>
@@ -345,9 +430,16 @@ type StoryElementCardProps = {
   onPress: () => void;
   /** Glance variant: drop shadow, used in the Related Elements panel (Spec §3.2). */
   glance?: boolean;
+  /** Selected for comparison — shows a highlight ring (Spec §5.1). */
+  selected?: boolean;
 };
 
-function StoryElementCard({ element, onPress, glance = false }: StoryElementCardProps) {
+function StoryElementCard({
+  element,
+  onPress,
+  glance = false,
+  selected = false,
+}: StoryElementCardProps) {
   const meta = PILLAR_META[element.pillar];
   const bullets = isBulletElement(element);
 
@@ -355,6 +447,7 @@ function StoryElementCard({ element, onPress, glance = false }: StoryElementCard
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${meta.label}: ${element.label}`}
+      accessibilityState={{ selected }}
       onPress={onPress}
       style={(state) => [
         styles.card,
@@ -384,6 +477,7 @@ function StoryElementCard({ element, onPress, glance = false }: StoryElementCard
         style={[styles.tagBar, { backgroundColor: TAG_COLOR[element.creativeTag] }]}
         pointerEvents="none"
       />
+      {selected && <View style={styles.cardSelectionRing} pointerEvents="none" />}
     </Pressable>
   );
 }
@@ -443,7 +537,8 @@ function StoryElementDetailView({
 
 type WritingAreaProps = {
   element: StoryElement;
-  onDismiss: () => void;
+  /** When omitted, no × is shown — the left element in Compare View (Spec §3.3). */
+  onDismiss?: () => void;
   onUpdate: (id: string, patch: Partial<StoryElement>) => void;
 };
 
@@ -499,7 +594,7 @@ function WritingArea({ element, onDismiss, onUpdate }: WritingAreaProps) {
           <Text style={styles.pillarHeaderLabel}>{meta.label}</Text>
           <Text style={styles.pillarCaret}>▾</Text>
         </Pressable>
-        <DismissButton onPress={onDismiss} />
+        {onDismiss ? <DismissButton onPress={onDismiss} /> : null}
       </View>
 
       <View style={styles.whiteInner}>
@@ -690,7 +785,52 @@ function RelatedElementsPanel({ pillar, related, onNavigate }: RelatedElementsPa
 }
 
 // =====================================================================
-// Chat Panel — shared by the canvas and the Detail View (Spec §3.1, §3.2)
+// Compare View (Spec §3.3)
+// =====================================================================
+
+type CompareViewProps = {
+  projectId: string;
+  left: StoryElement;
+  right: StoryElement;
+  onUpdate: (id: string, patch: Partial<StoryElement>) => void;
+  onDismissRight: () => void;
+};
+
+function compareWelcome(left: StoryElement, right: StoryElement): string {
+  return `Comparing "${left.title}" and "${right.title}". Do these two hold together — or is there a tension worth pulling on?`;
+}
+
+/**
+ * Two story elements side by side for a coherence check. Both writing areas
+ * are editable; the chat panel serves both. The left element has no × while
+ * the right is present — dismissing the right returns to the left element's
+ * Detail View (Spec §3.3, §4.6).
+ */
+function CompareView({ projectId, left, right, onUpdate, onDismissRight }: CompareViewProps) {
+  return (
+    <View style={styles.surface}>
+      <View style={styles.detailRow}>
+        <View style={styles.chatRegion}>
+          <ChatPanel projectId={projectId} welcome={compareWelcome(left, right)} />
+        </View>
+        <View style={styles.compareHalf}>
+          <WritingArea key={left.id} element={left} onUpdate={onUpdate} />
+        </View>
+        <View style={styles.compareHalf}>
+          <WritingArea
+            key={right.id}
+            element={right}
+            onUpdate={onUpdate}
+            onDismiss={onDismissRight}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// =====================================================================
+// Chat Panel — shared by the canvas, Detail View, and Compare View
 // =====================================================================
 
 const CANVAS_WELCOME = 'Your ideas are organized. Tap any element to start defining it in detail.';
@@ -902,6 +1042,9 @@ const styles = StyleSheet.create({
   relatedRegion: {
     width: RELATED_PANEL_WIDTH,
   },
+  compareHalf: {
+    flex: 1,
+  },
 
   // Chat panel
   chatPanel: {
@@ -1042,6 +1185,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 2, height: 4 },
+  },
+  cardSelectionRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 2,
+    borderColor: COMPARE_BLUE,
+    borderRadius: CARD_RADIUS,
   },
   cardHeader: {
     flexDirection: 'row',
