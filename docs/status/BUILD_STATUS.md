@@ -1,6 +1,6 @@
 # Story Engine — Build Status
 
-**Last updated:** May 18, 2026 (Chat Engine Phases 1–7 complete)
+**Last updated:** May 21, 2026 (Development Design Spec v0.2 complete)
 
 ---
 
@@ -17,7 +17,7 @@ Implementation has begun. Project scaffolded (Expo SDK 52 + TypeScript + Jest). 
 | 1 | PRD | ✅ Complete | `Spec_Story_Engine_PRD.md` — v0.3, four-phase pipeline model |
 | 2 | Templates | ✅ Complete | `Templates_SpecDocs.md` — Tech Spec, Design Spec, Buildable Unit templates |
 | 3 | Structure Map | ✅ Complete | `Structure_Map.md` — v0.2, rewritten for pipeline model. 8 feature folders, 13 Level 2 specs. |
-| 4 | Level 2 Specs | 🟡 In progress | 9 of 15 complete |
+| 4 | Level 2 Specs | 🟡 In progress | 10 of 15 complete |
 | 5 | Level 3 Buildable Units | ⬜ Not started | ~22 anticipated, depends on Level 2 |
 | 6 | Claude Code Handoff | 🟡 In progress | Entry flow implemented; Discovery UI next |
 | 7 | Spec Updates | ⬜ Not started | Ongoing as implementation reveals gaps |
@@ -39,6 +39,7 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | D — Surfaces | 7 | `Spec_SplashScreen_Design.md` | ✅ Complete (v0.1) |
 | D — Surfaces | 7b | `Spec_ProjectChooser_Design.md` | ✅ Complete (v0.1) |
 | D — Surfaces | 7c | `Spec_StepMenu_Design.md` | ✅ Complete (v0.1) |
+| D — Surfaces | 7d | `Spec_Development_Design.md` | ✅ Complete (v0.2) |
 | D — Surfaces | 8 | `Spec_Workspace_Design.md` | ⬜ |
 | E — Enrichment | 9 | `Spec_InsightsEngine.md` | ⬜ |
 | E — Enrichment | 10 | `Spec_InsightsPanel_Design.md` | ⬜ |
@@ -100,6 +101,14 @@ From `Structure_Map.md` §6. Write in this order, build after each phase.
 | Phase-adaptive system prompts | One pipeline, four personalities — prompt changes by phase, mechanics stay the same | ChatEngine v0.1 |
 | RETHINK requires confirmation | Major concept version changes (RETHINK) trigger user confirmation; REFINE applies automatically | ChatEngine v0.1 |
 | Context caps | 40 message history cap, 50 Discovery note cap in context | ChatEngine v0.1 |
+| Development Design v0.2 reconciled | Figma designs reconciled against spec — font to Aleo, gradient columns, 10px radius, ui_eval bar (Core/Evolve/Set Aside), Detail View with IDEA + DEFINITION sections, Compare View with dismiss flow, comparison mode button, pillar reassignment dropdown | Development_Design v0.2 |
+| definition field on Concept | Separate `definition: string \| null` field preserves Discovery summary in `value` while storing expanded writing | Development_Design v0.2 |
+| creativeTag field on Concept | `'CORE' \| 'EVOLVE' \| 'SET_ASIDE'` maps to ui_eval bar color; defaults to CORE | Development_Design v0.2 |
+| ui_eval tag colors | Core=#9CCBAC green, Evolve=#F2BA03 yellow, Set Aside=#AA5959 red | Development_Design v0.2 |
+| Comparison mode via canvas button | Two-tap selection on canvas enters Compare View; also creates manual connection between elements | Development_Design v0.2 |
+| Dismiss navigation via × button | Circle × is primary back control: Compare right → Detail left → Canvas | Development_Design v0.2 |
+| Pillar reassignment in Detail View | Tappable pillar header opens dropdown to change element's dimension | Development_Design v0.2 |
+| Character cards use bullet format | Character story element cards display traits/motivations as bullet points, not paragraphs | Development_Design v0.2 |
 | Story Elements mental model | User-facing term for Concepts in Development — creative building blocks, not database taxonomy | Development Brief |
 | Focus model for Development | One dimension at a time; other two recede. Creative gravity determines initial focus. | Development Brief |
 | Element detail as focused view | Tapping a story element opens focused detail view (exact pattern TBD in Figma) | Development Brief |
@@ -140,6 +149,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | `start-screen/Spec_ProjectChooser_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 | `start-screen/Spec_StepMenu_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.1) |
 | `design/Development_Screen_Brief.md` | Design Brief | ✅ Complete |
+| `development/Spec_Development_Design.md` | Design Spec (Level 2) | ✅ Complete (v0.2) |
 
 ---
 
@@ -188,7 +198,12 @@ Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
 
 ## What's Next
 
-**Immediate next step:** Design the Development screen in Figma using `docs/design/Development_Screen_Brief.md` as the creative direction. The brief captures conceptual decisions from the May 2026 thought experiment: three-level hierarchy (dimension → element → detail), focus model (one dimension at a time), Core/Evolve/Set Aside element tagging, contextual relationships, and Ready Player One example content for the comp. Once Figma designs are complete, bring them to a new thread to write `Spec_Development_Design.md`.
+**Immediate next step:** Wire up Discovery chat to AI, or begin building the Development Canvas UI using the handoff prompt in `Spec_Development_Design.md` v0.2. The Development screen Figma designs are complete and reconciled against the spec.
+
+**Also completed this session:**
+- `Spec_Development_Design.md` v0.2 — reconciled against four Figma screens (Canvas, Story Element Small, Detail View, Compare View). 6 of 7 open questions resolved. Only remaining open question: Refinement phase unlock trigger.
+
+**Previous immediate next step (superseded):** ~~Design the Development screen in Figma using `docs/design/Development_Screen_Brief.md` as the creative direction. The brief captures conceptual decisions from the May 2026 thought experiment: three-level hierarchy (dimension → element → detail), focus model (one dimension at a time), Core/Evolve/Set Aside element tagging, contextual relationships, and Ready Player One example content for the comp. Once Figma designs are complete, bring them to a new thread to write `Spec_Development_Design.md`.
 
 **Also pending:**
 

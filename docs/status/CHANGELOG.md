@@ -4,6 +4,12 @@ All notable changes, logged per session. Tags: `[ui]` `[data]` `[infra]` `[spec]
 
 ---
 
+## 2026-05-21
+
+- [spec] Completed `Spec_Development_Design.md` v0.2 — reconciled against four updated Figma screens: Development Canvas (69:53), Story Element Small component (284:284), Detail View (290:910), and Compare View (290:619). Major changes from v0.1: body font corrected to Aleo throughout; column backgrounds changed from flat #F5F5F5 to gradient (#EEEDED → #E8E8E8); card corner radius corrected from 8px to 10px; added ui_eval component (Core/Evolve/Set Aside creative tag bar with colors #9CCBAC green, #F2BA03 yellow, #AA5959 red); added Detail View with IDEA + IDEA THOUGHT / DEFINITION sections on light blue #E4F5FF backgrounds inside white inner panel; added Compare View with side-by-side elements; added comparison mode button with active/inactive SVG states; added dismiss navigation via circle × button; character cards standardized to bullet-point format; phase header typography updated (Aleo Regular 36pt for number, Barlow Thin 36pt for name, Aleo Bold 20pt #737373 for subtitle); pillar reassignment via tappable header dropdown in Detail View; added `definition` and `creativeTag` fields to Concept entity (§6.1).
+- [spec] Resolved 6 of 7 open questions: Q1 (definition storage → `definition` field on Concept), Q2 (Compare View entry → comparison mode button on canvas), Q3 (manual connections → created via comparison mode selection), Q4 (element title editing → pencil icon in IDEA section), Q5 (canvas card content → shows Discovery summary only, tap to see full definition), Q6 (pillar reassignment → tappable pillar header dropdown). Q7 (Refinement phase unlock trigger) remains open.
+- [docs] Updated BUILD_STATUS.md — Level 2 spec count now 10/15, Development_Design v0.2 added to inventory and writing order, 8 new key decisions logged, next step updated.
+
 ## 2026-05-20
 
 - [docs] Created `docs/design/Development_Screen_Brief.md` — pre-spec design brief capturing conceptual decisions for the Development screen: three-level hierarchy (dimension → element → detail), focus model (one dimension at a time, others recede), Core/Evolve/Set Aside element tagging, contextual relationship display, and Ready Player One example content in mid-development voice for Figma comps.
