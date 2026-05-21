@@ -103,7 +103,9 @@ Introduced by `Spec_Development_Design.md` v0.2 for the Development surfaces. Pe
 
 ### Navigation
 
-[TBD — to be defined in Design Specs. Phase navigation within workspace, dimension switching, and back-to-Start controls needed.]
+**Phase-header arrows.** The Discovery and Development phase headers carry a back/forward navigation pair — a bare stroke chevron on each side of the header row: `←` to the left of the phase number, `→` near the avatar. Icons are Text Primary (`#1A1A1A`), 24×24, no background circle or fill. Enabled arrows are `Pressable` and dim to opacity 0.6 on hover; a disabled forward arrow (e.g. Development → Refinement before that phase exists) is a non-interactive view at opacity 0.3. The back arrow returns to the Step Menu; the forward arrow advances to the next phase.
+
+[Still TBD in Design Specs — in-workspace phase navigation, dimension switching, and back-to-Start controls.]
 
 ### Chat Panel
 
