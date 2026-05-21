@@ -21,7 +21,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Animated,
   Image,
@@ -67,6 +67,8 @@ const ICON_THEME = require('../../../assets/icons/icon_theme.svg');
 const ICON_WORLD = require('../../../assets/icons/icon_world.svg');
 const ICON_CHARACTER = require('../../../assets/icons/icon_character.svg');
 const ICON_PENCIL = require('../../../assets/icons/icon_pencil.svg');
+const ICON_ARROW_BACK = require('../../../assets/icons/icon_arrow_back.svg');
+const ICON_ARROW_FORWARD = require('../../../assets/icons/icon_arrow_forward.svg');
 const BUTTON_CLOSE_X = require('../../../assets/buttons/button-close-x.svg');
 const COMPARISON_INACTIVE = require('../../../assets/buttons/button_comparison_inactive.svg');
 const COMPARISON_ACTIVE = require('../../../assets/buttons/button_comparison_active.svg');
@@ -94,9 +96,13 @@ const TAG_COLOR: Record<CreativeTag, string> = {
 
 // --- Layout tokens (Spec §7 "Spacing & Layout") ---
 const HEADER_PAD_TOP = 64;
-const HEADER_LEFT_PAD = 82;
+// Reduced from 82 so the back arrow occupies the freed space:
+// 42 (pad) + 24 (arrow) + 16 (gap) = 82, keeping the phase number in place.
+const HEADER_LEFT_PAD = 42;
 const HEADER_RIGHT_PAD = 32;
 const NUMBER_NAME_GAP = 72;
+const NAV_ARROW_SIZE = 24;
+const NAV_ARROW_GAP = 16;
 const CHAT_PANEL_LEFT_PAD = 72;
 const CHAT_PANEL_WIDTH = 309;
 const RELATED_PANEL_WIDTH = 426;
@@ -573,6 +579,7 @@ function DevelopmentWorkspace({
   if (!surface) {
     surface = (
       <DevelopmentCanvas
+        projectId={projectId}
         chat={chat}
         elements={elements}
         comparisonActive={comparisonActive}
@@ -595,6 +602,7 @@ function DevelopmentWorkspace({
 // =====================================================================
 
 type DevelopmentCanvasProps = {
+  projectId: string;
   chat: ChatProps;
   elements: StoryElement[];
   comparisonActive: boolean;
@@ -604,6 +612,7 @@ type DevelopmentCanvasProps = {
 };
 
 function DevelopmentCanvas({
+  projectId,
   chat,
   elements,
   comparisonActive,
@@ -613,7 +622,11 @@ function DevelopmentCanvas({
 }: DevelopmentCanvasProps) {
   return (
     <View style={styles.surface}>
-      <PhaseHeader comparisonActive={comparisonActive} onToggleComparison={onToggleComparison} />
+      <PhaseHeader
+        projectId={projectId}
+        comparisonActive={comparisonActive}
+        onToggleComparison={onToggleComparison}
+      />
       <View style={styles.contentRow}>
         <View style={styles.chatRegion}>
           <ChatPanel {...chat} />
@@ -635,13 +648,68 @@ function DevelopmentCanvas({
 }
 
 type PhaseHeaderProps = {
+  projectId: string;
   comparisonActive: boolean;
   onToggleComparison: () => void;
 };
 
-function PhaseHeader({ comparisonActive, onToggleComparison }: PhaseHeaderProps) {
+type NavArrowProps = {
+  direction: 'back' | 'forward';
+  accessibilityLabel: string;
+  onPress?: () => void;
+  /** Disabled arrows render as a non-interactive, dimmed View (Step Menu locked-row pattern). */
+  disabled?: boolean;
+};
+
+/**
+ * Phase-header navigation chevron. Bare stroke icon, no background. Enabled:
+ * Pressable, hover dims to 0.6. Disabled: a plain View dimmed to 0.3.
+ */
+function NavArrow({ direction, accessibilityLabel, onPress, disabled = false }: NavArrowProps) {
+  const source = direction === 'back' ? ICON_ARROW_BACK : ICON_ARROW_FORWARD;
+  const marginStyle = direction === 'back' ? styles.navArrowBack : styles.navArrowForward;
+  const icon = (
+    <Image source={source} style={styles.navArrowIcon} accessibilityIgnoresInvertColors />
+  );
+
+  if (disabled) {
+    return (
+      <View
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled: true }}
+        style={[styles.navArrow, marginStyle, styles.navArrowDisabled]}
+      >
+        {icon}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      hitSlop={8}
+      style={(state) => [
+        styles.navArrow,
+        marginStyle,
+        (state as { hovered?: boolean }).hovered && styles.navArrowHover,
+      ]}
+    >
+      {icon}
+    </Pressable>
+  );
+}
+
+function PhaseHeader({ projectId, comparisonActive, onToggleComparison }: PhaseHeaderProps) {
+  const router = useRouter();
   return (
     <View style={styles.header}>
+      <NavArrow
+        direction="back"
+        accessibilityLabel="Back to phases"
+        onPress={() => router.push(`/project/${projectId}/steps`)}
+      />
       <View style={styles.headerLeft}>
         <Text style={styles.phaseNumber}>2</Text>
         <Text style={styles.phaseName}>Development</Text>
@@ -649,6 +717,8 @@ function PhaseHeader({ comparisonActive, onToggleComparison }: PhaseHeaderProps)
       <Text style={styles.subtitle}>
         Give your ideas shape...explore who, where, and why, one conversation at a time.
       </Text>
+      {/* Forward arrow disabled until the Refinement phase exists. */}
+      <NavArrow direction="forward" accessibilityLabel="Refinement — coming soon" disabled />
       <View style={styles.headerRight}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>C</Text>
@@ -1337,7 +1407,9 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    width: CHAT_PANEL_LEFT_PAD + CHAT_PANEL_WIDTH - HEADER_LEFT_PAD,
+    // Right edge still aligns with the chat panel below; the back arrow + gap
+    // are now part of the left offset, so they are subtracted here.
+    width: CHAT_PANEL_LEFT_PAD + CHAT_PANEL_WIDTH - HEADER_LEFT_PAD - NAV_ARROW_SIZE - NAV_ARROW_GAP,
   },
   phaseNumber: {
     fontFamily: 'Aleo_400Regular',
@@ -1363,7 +1435,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'column',
     alignItems: 'flex-end',
-    marginLeft: 24,
+    marginLeft: 16,
     gap: 14,
   },
   avatar: {
@@ -1393,6 +1465,28 @@ const styles = StyleSheet.create({
   },
   iconButtonHover: {
     backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  navArrow: {
+    width: NAV_ARROW_SIZE,
+    height: NAV_ARROW_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navArrowBack: {
+    marginRight: NAV_ARROW_GAP,
+  },
+  navArrowForward: {
+    marginLeft: 24,
+  },
+  navArrowHover: {
+    opacity: 0.6,
+  },
+  navArrowDisabled: {
+    opacity: 0.3,
+  },
+  navArrowIcon: {
+    width: NAV_ARROW_SIZE,
+    height: NAV_ARROW_SIZE,
   },
 
   // Canvas content row

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Image,
   NativeSyntheticEvent,
@@ -53,6 +53,8 @@ import { getDefaultProjectStore } from '../../../src/persistence/projectStore';
 
 const NOTE_TOGGLE_ACTIVE = require('../../../assets/buttons/button_note_active.svg');
 const NOTE_TOGGLE_INACTIVE = require('../../../assets/buttons/button_note_inactive.svg');
+const ICON_ARROW_BACK = require('../../../assets/icons/icon_arrow_back.svg');
+const ICON_ARROW_FORWARD = require('../../../assets/icons/icon_arrow_forward.svg');
 
 // Tokens — Spec_Discovery_Design.md §3, §7
 const TEXT_DARK = '#1A1A1A';
@@ -64,8 +66,13 @@ const SURFACE_ALT = '#E8E8E8';
 const WHITE = '#FFFFFF';
 const SEND_BORDER = '#656363';
 
-const HEADER_LEFT_PAD = 82;
+// Header left padding is reduced from 82 so the back arrow occupies the freed
+// space: 42 (pad) + 24 (arrow) + 16 (gap) = 82, keeping the phase number in
+// its original position.
+const HEADER_LEFT_PAD = 42;
 const NUMBER_NAME_GAP = 72;
+const NAV_ARROW_SIZE = 24;
+const NAV_ARROW_GAP = 16;
 const CHAT_PANEL_LEFT_PAD = 72;
 const CHAT_PANEL_WIDTH = 309;
 const HEADER_PAD_TOP = 64;
@@ -205,7 +212,7 @@ function DiscoveryWorkspace({ projectId, initialProjectFile }: DiscoveryWorkspac
 
   return (
     <View style={styles.container}>
-      <PhaseHeader />
+      <PhaseHeader projectId={projectId} />
       <View style={styles.contentRow}>
         <View style={styles.leftColumn}>
           <ChatPanel
@@ -243,9 +250,63 @@ function DiscoveryWorkspace({ projectId, initialProjectFile }: DiscoveryWorkspac
   );
 }
 
-function PhaseHeader() {
+type NavArrowProps = {
+  direction: 'back' | 'forward';
+  accessibilityLabel: string;
+  onPress?: () => void;
+  /** Disabled arrows render as a non-interactive, dimmed View (Step Menu locked-row pattern). */
+  disabled?: boolean;
+};
+
+/**
+ * Phase-header navigation chevron. Bare stroke icon, no background. Enabled:
+ * Pressable, hover dims to 0.6. Disabled: a plain View dimmed to 0.3.
+ */
+function NavArrow({ direction, accessibilityLabel, onPress, disabled = false }: NavArrowProps) {
+  const source = direction === 'back' ? ICON_ARROW_BACK : ICON_ARROW_FORWARD;
+  const marginStyle = direction === 'back' ? styles.navArrowBack : styles.navArrowForward;
+  const icon = (
+    <Image source={source} style={styles.navArrowIcon} accessibilityIgnoresInvertColors />
+  );
+
+  if (disabled) {
+    return (
+      <View
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled: true }}
+        style={[styles.navArrow, marginStyle, styles.navArrowDisabled]}
+      >
+        {icon}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      hitSlop={8}
+      style={(state) => [
+        styles.navArrow,
+        marginStyle,
+        (state as { hovered?: boolean }).hovered && styles.navArrowHover,
+      ]}
+    >
+      {icon}
+    </Pressable>
+  );
+}
+
+function PhaseHeader({ projectId }: { projectId: string }) {
+  const router = useRouter();
   return (
     <View style={styles.header}>
+      <NavArrow
+        direction="back"
+        accessibilityLabel="Back to phases"
+        onPress={() => router.push(`/project/${projectId}/steps`)}
+      />
       <View style={styles.headerLeft}>
         <Text style={styles.phaseNumber}>1</Text>
         <Text style={styles.phaseName}>Discovery</Text>
@@ -253,6 +314,11 @@ function PhaseHeader() {
       <Text style={styles.subtitle}>
         Get every idea out of your head and onto the canvas...structure comes later.
       </Text>
+      <NavArrow
+        direction="forward"
+        accessibilityLabel="Go to Development"
+        onPress={() => router.push(`/project/${projectId}/development`)}
+      />
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>C</Text>
       </View>
@@ -1026,7 +1092,9 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    width: CHAT_PANEL_LEFT_PAD + CHAT_PANEL_WIDTH - HEADER_LEFT_PAD,
+    // Right edge still aligns with the chat panel below; the back arrow + gap
+    // are now part of the left offset, so they are subtracted here.
+    width: CHAT_PANEL_LEFT_PAD + CHAT_PANEL_WIDTH - HEADER_LEFT_PAD - NAV_ARROW_SIZE - NAV_ARROW_GAP,
   },
   phaseNumber: {
     fontFamily: 'Aleo_400Regular',
@@ -1056,13 +1124,35 @@ const styles = StyleSheet.create({
     backgroundColor: SURFACE_ALT,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 24,
+    marginLeft: 16,
   },
   avatarText: {
     fontFamily: 'Aleo_400Regular',
     fontSize: 14,
     color: TEXT_DARK,
     includeFontPadding: false,
+  },
+  navArrow: {
+    width: NAV_ARROW_SIZE,
+    height: NAV_ARROW_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navArrowBack: {
+    marginRight: NAV_ARROW_GAP,
+  },
+  navArrowForward: {
+    marginLeft: 24,
+  },
+  navArrowHover: {
+    opacity: 0.6,
+  },
+  navArrowDisabled: {
+    opacity: 0.3,
+  },
+  navArrowIcon: {
+    width: NAV_ARROW_SIZE,
+    height: NAV_ARROW_SIZE,
   },
   contentRow: {
     flex: 1,
