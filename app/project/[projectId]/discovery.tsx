@@ -18,6 +18,22 @@ import {
   updateNoteContent,
   updateNotePosition,
 } from '../../../src/engine/discovery/canvasManager';
+import {
+  createChatClient,
+  loadChatEngineConfig,
+  type ChatClient,
+} from '../../../src/engine/chat/client';
+import {
+  assembleSystemPrompt,
+  buildDiscoveryContext,
+  formatDiscoveryContextBlock,
+  selectConversationHistory,
+} from '../../../src/engine/chat/context';
+import {
+  extractDiscoveryNotes,
+  type ViewportBounds,
+} from '../../../src/engine/chat/extraction';
+import { parseDiscoveryResponse } from '../../../src/engine/chat/parser';
 import { createChatMessage } from '../../../src/models/factories';
 import {
   DEFAULT_NOTE_COLOR,
@@ -30,6 +46,7 @@ import type {
   DiscoveryNote,
   NoteColor,
   Position,
+  Project,
   ProjectFile,
 } from '../../../src/models/types';
 import { getDefaultProjectStore } from '../../../src/persistence/projectStore';
@@ -145,6 +162,11 @@ function DiscoveryWorkspace({ projectId, initialProjectFile }: DiscoveryWorkspac
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
+  // Shared by the Canvas (which writes it on pan/resize) and the ChatPanel
+  // (which reads it when placing chat-extracted notes). A ref, not state, so
+  // panning doesn't re-render the chat panel on every frame.
+  const viewportRef = useRef<ViewportBounds>({ x: 0, y: 0, width: 0, height: 0 });
+
   // Persist on any change to notes / clusters / messages. Skip the first run
   // so we don't write back the just-loaded bundle. Phase 3 of the persistence
   // spec adds debounce + a save queue; for v1 every change writes immediately.
@@ -186,7 +208,16 @@ function DiscoveryWorkspace({ projectId, initialProjectFile }: DiscoveryWorkspac
       <PhaseHeader />
       <View style={styles.contentRow}>
         <View style={styles.leftColumn}>
-          <ChatPanel projectId={projectId} messages={messages} setMessages={setMessages} />
+          <ChatPanel
+            projectId={projectId}
+            project={initialProjectFile.project}
+            messages={messages}
+            setMessages={setMessages}
+            notes={notes}
+            setNotes={setNotes}
+            selectedColor={selectedColor}
+            viewportRef={viewportRef}
+          />
           <ConsolidateButton noteCount={notes.length} />
         </View>
         <NoteToolStrip
@@ -205,6 +236,7 @@ function DiscoveryWorkspace({ projectId, initialProjectFile }: DiscoveryWorkspac
           placementActive={placementActive}
           editingNoteId={editingNoteId}
           setEditingNoteId={setEditingNoteId}
+          viewportRef={viewportRef}
         />
       </View>
     </View>
@@ -230,26 +262,174 @@ function PhaseHeader() {
 
 type ChatPanelProps = {
   projectId: string;
+  project: Project;
   messages: ChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  notes: DiscoveryNote[];
+  setNotes: React.Dispatch<React.SetStateAction<DiscoveryNote[]>>;
+  selectedColor: NoteColor;
+  viewportRef: React.MutableRefObject<ViewportBounds>;
 };
 
-function ChatPanel({ projectId, messages, setMessages }: ChatPanelProps) {
+/**
+ * Conversational text for the live streaming bubble. The structured JSON
+ * block (§5.1) arrives at the tail of the response; we hide it while
+ * streaming and show only the chat portion (Spec_ChatEngine §2.3). An empty
+ * string renders as a typing ellipsis.
+ */
+function streamingDisplayText(raw: string): string {
+  const conversational = raw.split('```json')[0].trimEnd();
+  return conversational.length > 0 ? conversational : '…';
+}
+
+/**
+ * Discovery chat panel, wired to the Chat Engine (Spec_ChatEngine §2–§5).
+ * The response streams token-by-token into a live bubble; on completion it is
+ * parsed and any extracted notes are placed on the canvas within the viewport.
+ */
+function ChatPanel({
+  projectId,
+  project,
+  messages,
+  setMessages,
+  notes,
+  setNotes,
+  selectedColor,
+  viewportRef,
+}: ChatPanelProps) {
   const [draft, setDraft] = useState('');
+  // Live assistant bubble: a string while a response streams, null when idle.
+  const [streaming, setStreaming] = useState<string | null>(null);
+  // Transient system notice (errors, §2.2). Never persisted as a ChatMessage.
+  const [notice, setNotice] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  // Each send bumps this; a stream whose id is stale has been superseded (§2.3).
+  const runIdRef = useRef(0);
+
+  // Config + client are built once per panel, not per message (§2.2). A
+  // missing API key throws here — surfaced as a notice rather than a crash.
+  const engine = useMemo<{ client: ChatClient | null; error: string | null }>(() => {
+    try {
+      return { client: createChatClient(loadChatEngineConfig()), error: null };
+    } catch (err) {
+      return { client: null, error: err instanceof Error ? err.message : String(err) };
+    }
+  }, []);
+
+  // Abort an in-flight stream if the panel unmounts.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const scrollToEnd = () =>
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+
+  // Streaming complete — parse the response, place extracted notes, and
+  // persist the assistant message (§5.1, §5.4).
+  const handleDone = (fullText: string) => {
+    const parsed = parseDiscoveryResponse(fullText);
+    if (parsed.parseError) {
+      // §10 — malformed JSON falls back to plain chat; log, don't surface.
+      // eslint-disable-next-line no-console
+      console.warn('[discovery] response parse error:', parsed.parseError);
+    }
+    if (parsed.notes.length > 0) {
+      setNotes((prev) => [
+        ...prev,
+        ...extractDiscoveryNotes({
+          projectId,
+          noteContents: parsed.notes,
+          viewport: viewportRef.current,
+          existingNotes: prev,
+          color: selectedColor,
+        }),
+      ]);
+    }
+    setMessages((prev) => [
+      ...prev,
+      createChatMessage({
+        projectId,
+        phase: 'DISCOVERY',
+        role: 'assistant',
+        content: parsed.chatResponse,
+      }),
+    ]);
+    setStreaming(null);
+    scrollToEnd();
+  };
+
+  const runStream = async (
+    runId: number,
+    controller: AbortController,
+    history: ChatMessage[],
+    client: ChatClient,
+  ) => {
+    const contextBlock = formatDiscoveryContextBlock(
+      buildDiscoveryContext({ project, discoveryNotes: notes }),
+    );
+    const system = assembleSystemPrompt({
+      phase: 'DISCOVERY',
+      projectContextBlock: contextBlock,
+    });
+    const apiMessages = selectConversationHistory({ messages: history, phase: 'DISCOVERY' });
+
+    try {
+      for await (const event of client.sendMessage({
+        system,
+        messages: apiMessages,
+        signal: controller.signal,
+      })) {
+        // A newer send superseded this stream — drop its events silently (§2.3).
+        if (runIdRef.current !== runId) return;
+        if (event.type === 'delta') {
+          setStreaming((prev) => (prev ?? '') + event.text);
+          scrollToEnd();
+        } else if (event.type === 'done') {
+          handleDone(event.text);
+          return;
+        } else if (event.type === 'error') {
+          // CANCELLED is our own abort — discard quietly. Others surface (§2.2).
+          if (event.error.kind !== 'CANCELLED') setNotice(event.error.message);
+          setStreaming(null);
+          return;
+        }
+      }
+    } catch (err) {
+      if (runIdRef.current !== runId) return;
+      // eslint-disable-next-line no-console
+      console.error('[discovery] chat stream failed', err);
+      setNotice('Something went wrong with the AI service. Try again in a moment.');
+      setStreaming(null);
+    }
+  };
 
   const send = () => {
     const trimmed = draft.trim();
     if (!trimmed) return;
-    const msg = createChatMessage({
+    if (!engine.client) {
+      setNotice(engine.error ?? 'The AI is unavailable.');
+      return;
+    }
+
+    // §2.3 — a new send while a response streams cancels the in-flight one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const runId = ++runIdRef.current;
+
+    const userMessage = createChatMessage({
       projectId,
       phase: 'DISCOVERY',
       role: 'user',
       content: trimmed,
     });
-    setMessages((prev) => [...prev, msg]);
+    const history = [...messages, userMessage];
+    setMessages(history);
     setDraft('');
-    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+    setNotice(null);
+    setStreaming('');
+    scrollToEnd();
+
+    void runStream(runId, controller, history, engine.client);
   };
 
   const onKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
@@ -263,6 +443,8 @@ function ChatPanel({ projectId, messages, setMessages }: ChatPanelProps) {
       }
     }
   };
+
+  const streamingActive = streaming !== null;
 
   return (
     <View style={styles.chatPanel}>
@@ -286,6 +468,16 @@ function ChatPanel({ projectId, messages, setMessages }: ChatPanelProps) {
             </Text>
           </View>
         ))}
+        {streaming !== null && (
+          <View style={[styles.bubble, styles.bubbleAi]}>
+            <Text style={styles.bubbleTextAi}>{streamingDisplayText(streaming)}</Text>
+          </View>
+        )}
+        {notice !== null && (
+          <View style={[styles.bubble, styles.bubbleSystem]}>
+            <Text style={styles.bubbleTextSystem}>{notice}</Text>
+          </View>
+        )}
       </ScrollView>
       <View style={styles.chatInputArea}>
         <TextInput
@@ -300,10 +492,13 @@ function ChatPanel({ projectId, messages, setMessages }: ChatPanelProps) {
         />
         <Pressable
           accessibilityLabel="Send message"
+          accessibilityState={{ disabled: streamingActive }}
+          disabled={streamingActive}
           onPress={send}
           style={(state) => [
             styles.sendButton,
-            (state as { hovered?: boolean }).hovered && styles.sendButtonHover,
+            streamingActive && styles.sendButtonDisabled,
+            !streamingActive && (state as { hovered?: boolean }).hovered && styles.sendButtonHover,
           ]}
         >
           <Text style={styles.sendArrow}>↑</Text>
@@ -375,6 +570,7 @@ type CanvasProps = {
   placementActive: boolean;
   editingNoteId: string | null;
   setEditingNoteId: (id: string | null) => void;
+  viewportRef: React.MutableRefObject<ViewportBounds>;
 };
 
 // Pointer event shape used in onPointerDown/Move/Up. RN-web passes a
@@ -399,6 +595,7 @@ function Canvas({
   placementActive,
   editingNoteId,
   setEditingNoteId,
+  viewportRef,
 }: CanvasProps) {
   const containerRef = useRef<View>(null);
   const [pan, setPan] = useState<Position>({ x: 0, y: 0 });
@@ -410,6 +607,24 @@ function Canvas({
   useEffect(() => {
     if (!placementActive) setGhostLocal(null);
   }, [placementActive]);
+
+  // Keep the shared viewport ref current so chat-extracted notes land within
+  // the visible canvas region. The world is translated by `pan`, so the
+  // visible top-left in world coordinates is `-pan`.
+  useEffect(() => {
+    const node = containerRef.current as unknown as {
+      getBoundingClientRect?: () => DOMRect;
+    } | null;
+    const rect = node?.getBoundingClientRect?.();
+    if (rect) {
+      viewportRef.current = {
+        x: -pan.x,
+        y: -pan.y,
+        width: rect.width,
+        height: rect.height,
+      };
+    }
+  }, [pan, viewportRef]);
 
   const getRect = (): { left: number; top: number } | null => {
     const node = containerRef.current as unknown as { getBoundingClientRect?: () => DOMRect } | null;
@@ -939,6 +1154,18 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlign: 'right',
   },
+  bubbleSystem: {
+    alignSelf: 'center',
+    maxWidth: '100%',
+    paddingHorizontal: 8,
+  },
+  bubbleTextSystem: {
+    fontFamily: 'Aleo_400Regular_Italic',
+    fontSize: 14,
+    color: TEXT_SECONDARY,
+    includeFontPadding: false,
+    textAlign: 'center',
+  },
   chatInputArea: {
     backgroundColor: WHITE,
     borderRadius: 10,
@@ -972,6 +1199,9 @@ const styles = StyleSheet.create({
   },
   sendButtonHover: {
     backgroundColor: SURFACE_ALT,
+  },
+  sendButtonDisabled: {
+    opacity: 0.4,
   },
   sendArrow: {
     fontSize: 14,
