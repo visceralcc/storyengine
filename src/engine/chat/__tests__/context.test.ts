@@ -503,4 +503,24 @@ describe('selectConversationHistory', () => {
     const [first] = selectConversationHistory({ messages, phase: 'DISCOVERY' });
     expect(Object.keys(first).sort()).toEqual(['content', 'role']);
   });
+
+  it('drops leading assistant messages so messages[0] is always user-role (Anthropic API requirement)', () => {
+    const messages = [
+      makeMessage('DEVELOPMENT', 'assistant', 'opening greeting', '2026-05-01T00:00:00.000Z'),
+      makeMessage('DEVELOPMENT', 'user', 'first real message', '2026-05-01T00:01:00.000Z'),
+      makeMessage('DEVELOPMENT', 'assistant', 'response', '2026-05-01T00:02:00.000Z'),
+    ];
+    const out = selectConversationHistory({ messages, phase: 'DEVELOPMENT' });
+    expect(out).toHaveLength(2);
+    expect(out[0]).toEqual({ role: 'user', content: 'first real message' });
+    expect(out[1]).toEqual({ role: 'assistant', content: 'response' });
+  });
+
+  it('returns empty array when the only message is an assistant opening message', () => {
+    const messages = [
+      makeMessage('DEVELOPMENT', 'assistant', 'opening', '2026-05-01T00:00:00.000Z'),
+    ];
+    const out = selectConversationHistory({ messages, phase: 'DEVELOPMENT' });
+    expect(out).toEqual([]);
+  });
 });

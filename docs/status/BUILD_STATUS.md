@@ -205,7 +205,7 @@ _None._ Body font Noto Serif → Noticia Text → Domine → Aleo (final) has be
 | **Development UI** | **Phase 4a — Chat panel wired to the AI** | **✅ Complete** | **`app/project/[projectId]/development.tsx`** |
 | Development UI | Phase 4b — Text highlighting + contextual prompts | ⬜ | not started |
 
-Tests: 193 passing (20 model, 16 canvas, 28 persistence, 129 chat).
+Tests: 196 passing (20 model, 16 canvas, 28 persistence, 132 chat).
 
 ---
 

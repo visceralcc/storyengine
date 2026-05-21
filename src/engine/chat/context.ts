@@ -294,6 +294,8 @@ export interface SelectConversationHistoryInput {
  *   - filtered to the current `phase` (per DataModel §11, chat is phase-scoped)
  *   - capped at the most recent `limit` (default {@link HISTORY_MESSAGE_CAP})
  *   - mapped to the `{role, content}` shape the model sees
+ *   - leading assistant messages dropped (Anthropic Messages API requires
+ *     the first message to be role: "user")
  *
  * "Most recent" is by `createdAt`, ascending — the order the model expects.
  * Older messages remain persisted (chat is append-only); they just don't
@@ -305,5 +307,16 @@ export function selectConversationHistory(input: SelectConversationHistoryInput)
     .filter((m) => m.phase === input.phase)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const tail = phaseMessages.slice(Math.max(0, phaseMessages.length - limit));
-  return tail.map((m) => ({ role: m.role, content: m.content }));
+  const apiMessages = tail.map((m) => ({ role: m.role, content: m.content }));
+
+  // The Anthropic Messages API requires messages[0].role === 'user'. Engine-
+  // generated opening messages (e.g. Development §9.1) are assistant-role and
+  // may be the first message in a phase. Drop any leading assistant messages
+  // so the API call is valid. They remain in the persisted history and in the
+  // system prompt's project context.
+  while (apiMessages.length > 0 && apiMessages[0].role === 'assistant') {
+    apiMessages.shift();
+  }
+
+  return apiMessages;
 }

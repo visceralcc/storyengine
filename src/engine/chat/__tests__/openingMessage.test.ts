@@ -77,10 +77,11 @@ describe('generateOpeningMessage', () => {
 });
 
 describe('Phase 6 integration — opening message lives in selectable history', () => {
-  // The opening message is persisted as a normal ChatMessage. Once added to
-  // the project, it should appear in `selectConversationHistory` so the API
-  // call sees it as the first turn.
-  it('is returned by selectConversationHistory as the first DEVELOPMENT message', () => {
+  // The opening message is persisted as a normal ChatMessage. It is assistant-
+  // role and always chronologically first, so selectConversationHistory drops
+  // it from the API history — the Anthropic API requires messages[0].role ===
+  // 'user'. It stays dropped even after a user message follows it.
+  it('is dropped when it is the only (leading) message — API requires user-first', () => {
     const opening = generateOpeningMessage({
       projectId: PROJECT_ID,
       creativeGravity: 'CHARACTER',
@@ -90,7 +91,33 @@ describe('Phase 6 integration — opening message lives in selectable history', 
       messages: [opening],
       phase: 'DEVELOPMENT',
     });
-    expect(history).toEqual([{ role: 'assistant', content: opening.content }]);
+    // Leading assistant message is stripped — the API call gets an empty
+    // array, which is valid (the system prompt carries the project context).
+    expect(history).toEqual([]);
+  });
+
+  it('stays dropped when a user message follows it (opening is always chronologically first)', () => {
+    const opening = generateOpeningMessage({
+      projectId: PROJECT_ID,
+      creativeGravity: 'CHARACTER',
+      now: '2026-05-18T12:00:00.000Z',
+    });
+    const userMsg = {
+      ...opening,
+      id: 'msg_user1',
+      role: 'user' as const,
+      content: 'Tell me about her.',
+      createdAt: '2026-05-18T12:01:00.000Z',
+    };
+    const history = selectConversationHistory({
+      messages: [opening, userMsg],
+      phase: 'DEVELOPMENT',
+    });
+    // The opening message (assistant) is first chronologically and gets
+    // stripped. The API sees only the user message. This is correct —
+    // the system prompt carries the project context the AI needs.
+    expect(history).toHaveLength(1);
+    expect(history[0]).toEqual({ role: 'user', content: 'Tell me about her.' });
   });
 
   it('does NOT leak into the DISCOVERY history (phase scoping, DataModel §11)', () => {
